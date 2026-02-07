@@ -36,7 +36,7 @@ function PromptBar({ onSubmit, loading }: PromptBarProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ask about satellite data... (e.g., 'What crop should I grow in Greater Noida?')"
+          placeholder="Ask about satellite data... (e.g., 'Crops for Sultanpur' or 'NDVI for Agra and Mathura')"
           className="flex-1 neo-input"
           disabled={loading}
         />

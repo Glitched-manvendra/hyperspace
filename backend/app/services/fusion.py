@@ -122,27 +122,26 @@ def build_ui_instructions(
         )
 
     # -- Crop price trend chart (chart_line) --
+    # Build dynamic price trend from predicted crops or soil-recommended crops
+    crop_prediction = (live_context or {}).get("crop_prediction", [])
+    trend_crops = [
+        p["crop"] for p in crop_prediction[:3]
+    ] if crop_prediction else soil.get("recommended_crops", ["Rice", "Wheat", "Pulses"])[:3]
+
+    price_points = _build_price_trend_points(trend_crops)
+    trend_label = " vs ".join(c.capitalize() for c in trend_crops[:3])
+    region_name = (live_context or {}).get("region", "")
+
     cards.append(
         UIInstruction(
             card_type="chart_line",
             title="Crop Price Trends",
-            value="Rice vs Wheat vs Soybean",
-            subtitle="Projected price (INR/quintal)",
+            value=trend_label,
+            subtitle=f"Projected price (INR/quintal) — {region_name}",
             color="emerald",
             data={
-                "series": [
-                    {"name": "Rice", "dataKey": "rice"},
-                    {"name": "Wheat", "dataKey": "wheat"},
-                    {"name": "Soybean", "dataKey": "soybean"},
-                ],
-                "points": [
-                    {"month": "Jan", "rice": 2100, "wheat": 2200, "soybean": 3800},
-                    {"month": "Feb", "rice": 2050, "wheat": 2250, "soybean": 3900},
-                    {"month": "Mar", "rice": 2200, "wheat": 2300, "soybean": 4100},
-                    {"month": "Apr", "rice": 2350, "wheat": 2150, "soybean": 4200},
-                    {"month": "May", "rice": 2400, "wheat": 2100, "soybean": 4050},
-                    {"month": "Jun", "rice": 2500, "wheat": 2050, "soybean": 3950},
-                ],
+                "points": price_points,
+                "unit": "₹/qtl",
             },
         )
     )
@@ -186,7 +185,7 @@ def build_ui_instructions(
             market = pred.get("market", {})
             items.append(
                 {
-                    "crop": crop_name,
+                    "name": crop_name,
                     "confidence": pred["confidence"],
                     "season": market.get("season", _get_season(crop_name)),
                     "reasoning": get_price_display(pred["crop"]),
@@ -259,7 +258,7 @@ def build_ui_instructions(
                 data={
                     "items": [
                         {
-                            "crop": crop,
+                            "name": crop,
                             "confidence": round(0.92 - i * 0.05, 2),
                             "season": _get_season(crop),
                         }
@@ -406,12 +405,38 @@ def generate_guidance(
 
 
 def _get_region_name(lat: float, lon: float) -> str:
-    """Legacy region name lookup (used as fallback)."""
-    if 28.3 <= lat <= 28.6 and 77.3 <= lon <= 77.7:
-        return "Greater Noida, Uttar Pradesh"
-    elif 26.7 <= lat <= 27.0 and 80.8 <= lon <= 81.1:
-        return "Lucknow, Uttar Pradesh"
-    return f"Region ({lat:.2f}\u00b0N, {lon:.2f}\u00b0E)"
+    """Resolve a human-readable region name via reverse geocoding.
+
+    Uses Nominatim (OpenStreetMap) — free, no API key required.
+    Falls back to a generic coordinate label on failure.
+    """
+    try:
+        import httpx as _httpx
+        url = (
+            f"https://nominatim.openstreetmap.org/reverse"
+            f"?lat={lat}&lon={lon}&format=json&zoom=10&accept-language=en"
+        )
+        resp = _httpx.get(url, timeout=4.0, headers={"User-Agent": "OrbitalNexus/1.0"})
+        if resp.status_code == 200:
+            addr = resp.json().get("address", {})
+            city = (
+                addr.get("city")
+                or addr.get("town")
+                or addr.get("village")
+                or addr.get("county")
+                or addr.get("state_district")
+            )
+            state = addr.get("state", "")
+            country = addr.get("country", "")
+            if city and state:
+                return f"{city}, {state}"
+            if city and country:
+                return f"{city}, {country}"
+            if state:
+                return state
+    except Exception:
+        pass
+    return f"Region ({lat:.2f}°N, {lon:.2f}°E)"
 
 
 def _get_season(crop: str) -> str:
@@ -447,6 +472,48 @@ def _soil_score(soil: dict) -> int:
 
     score = (n / 300 * 25) + (p / 30 * 20) + (k / 350 * 25) + (oc / 1.0 * 30)
     return int(min(score, 100))
+
+
+def _build_price_trend_points(crops: list[str]) -> list[dict]:
+    """Generate monthly price trend data points for given crops.
+
+    Uses actual market data (price_min / price_max) and applies
+    seasonal variation so each city's predicted crops produce
+    a unique, realistic chart.
+    """
+    import math as _math
+
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+    # Seasonal modifiers — simulate price fluctuation per month
+    seasonal = [0.0, 0.02, 0.05, 0.08, 0.06, 0.03]
+
+    if not crops:
+        crops = ["rice"]
+
+    # Use the top crop to build a single-line trend
+    # (PriceTrendChart expects [{label, value}])
+    top_crop = crops[0].lower()
+    market = get_market_info(top_crop)
+
+    if market:
+        base = (market["price_min"] + market["price_max"]) / 2
+        spread = (market["price_max"] - market["price_min"]) / 2
+        trend_dir = {"rising": 1, "falling": -1, "stable": 0, "volatile": 0.5, "seasonal": 0.3}
+        drift = trend_dir.get(market.get("trend", "stable"), 0)
+    else:
+        base = 2500
+        spread = 400
+        drift = 0
+
+    points = []
+    for i, month in enumerate(months):
+        # Apply seasonal wave + trend drift
+        variation = _math.sin((i / 5.0) * _math.pi) * spread * 0.6
+        trend_shift = drift * (i * spread * 0.08)
+        price = int(base + variation + trend_shift + seasonal[i] * base)
+        points.append({"label": month, "value": price})
+
+    return points
 
 
 def _optimal_npk(crop: str, nutrient: str) -> float:

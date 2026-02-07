@@ -15,7 +15,7 @@ Now powered by the real Orbital Fusion Engine:
 from fastapi import APIRouter
 
 from app.models.schemas import UserQuery, QueryResponse
-from app.ai.intent import parse_intent, extract_location
+from app.ai.intent import parse_intent, extract_location, extract_locations
 from app.ai.gemini_service import generate_ai_guidance, is_ai_available
 from app.services.fusion import get_fused_data, build_ui_instructions, generate_guidance
 from app.services.data_fusion import get_location_context
@@ -104,6 +104,78 @@ async def process_query(payload: UserQuery) -> QueryResponse:
         recommendations=[],
         ui_instructions=ui_instructions,
     )
+
+
+@router.post("/multi-query")
+async def process_multi_query(payload: UserQuery):
+    """
+    Process a query that may reference multiple locations.
+
+    Returns an array of QueryResponse objects — one per location found.
+    Falls back to the standard single-location flow if only one (or zero) locations.
+    """
+    locations = extract_locations(payload.query)
+
+    # Fall back to single-location if 0 or 1 location found
+    if len(locations) <= 1:
+        single = await process_query(payload)
+        return [single]
+
+    import asyncio
+
+    async def _process_one(loc: dict) -> QueryResponse:
+        lat, lon, name = loc["lat"], loc["lon"], loc["name"]
+        intent = parse_intent(payload.query)
+        live_context = await get_location_context(lat, lon)
+
+        weather = live_context["weather"]
+        soil = live_context.get("soil", {})
+
+        crop_prediction = crop_engine.predict(
+            n=soil.get("nitrogen_kg_ha", 80),
+            p=soil.get("phosphorus_kg_ha", 40),
+            k=soil.get("potassium_kg_ha", 40),
+            temperature=weather.get("temp", 28.0),
+            humidity=weather.get("humidity", 65.0),
+            ph=soil.get("ph", 6.5),
+            rainfall=weather.get("rain", 100.0),
+        )
+
+        for pred in crop_prediction:
+            market = get_market_info(pred["crop"])
+            if market:
+                pred["market"] = market
+
+        live_context["crop_prediction"] = crop_prediction
+
+        fused_data = get_fused_data(
+            lat, lon,
+            live_weather=weather,
+            region_name=name,
+            data_sources=live_context["data_sources"],
+        )
+
+        ui_instructions = build_ui_instructions(intent, fused_data, live_context)
+        guidance_text = generate_guidance(intent, fused_data, payload.query, live_context)
+
+        return QueryResponse(
+            intent=intent,
+            query_echo=payload.query,
+            fused_data=fused_data,
+            guidance_text=guidance_text,
+            ai_powered=False,
+            recommendations=[],
+            ui_instructions=ui_instructions,
+        )
+
+    tasks = [_process_one(loc) for loc in locations]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Filter out exceptions, return successful results
+    return [
+        r for r in results
+        if not isinstance(r, Exception)
+    ]
 
 
 @router.get("/context/{lat}/{lon}")

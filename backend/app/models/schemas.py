@@ -12,9 +12,9 @@ class UserQuery(BaseModel):
     """Incoming natural language query from the user."""
 
     query: str = Field(..., description="Natural language question from the user")
-    lat: float = Field(default=28.4744, description="Latitude (default: Greater Noida)")
+    lat: float = Field(default=22.9734, description="Latitude (default: central India)")
     lon: float = Field(
-        default=77.5040, description="Longitude (default: Greater Noida)"
+        default=78.6569, description="Longitude (default: central India)"
     )
 
 
@@ -22,8 +22,8 @@ class FusedDataSummary(BaseModel):
     """Summary of fused multi-satellite data for the queried region."""
 
     region: str = Field(..., description="Human-readable region name")
-    lat: float = Field(default=28.4744, description="Query latitude")
-    lon: float = Field(default=77.504, description="Query longitude")
+    lat: float = Field(default=22.9734, description="Query latitude")
+    lon: float = Field(default=78.6569, description="Query longitude")
     temperature_avg_c: float = Field(..., description="Average temperature (°C)")
     rainfall_mm: float = Field(..., description="Total rainfall (mm)")
     soil_moisture_pct: float = Field(..., description="Soil moisture (%)")

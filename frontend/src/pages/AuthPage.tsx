@@ -265,7 +265,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
                       type="text"
                       value={village}
                       onChange={(e) => setVillage(e.target.value)}
-                      placeholder="e.g., Greater Noida"
+                      placeholder="e.g., Pune"
                       className="neo-input pl-10"
                     />
                   </div>
@@ -316,7 +316,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         {/* ── Skip for demo ── */}
         <motion.div variants={fadeUp} className="text-center mt-4">
           <button
-            onClick={() => onAuth({ phone: "demo", name: "Demo Farmer", village: "Greater Noida" })}
+            onClick={() => onAuth({ phone: "demo", name: "Demo Farmer", village: "India" })}
             className="text-xs text-sage/40 hover:text-sage transition-colors underline underline-offset-2"
           >
             Skip login (demo mode)

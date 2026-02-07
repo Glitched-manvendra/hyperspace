@@ -1,14 +1,15 @@
 """
 Data Fusion Engine — Orbital Nexus
 
-The "Orbital Fusion" backend: combines four real data sources
+The "Orbital Fusion" backend: combines five real data sources
 into a single location context for AI-powered crop recommendations.
 
 Sources:
   1. Open-Meteo API — Live weather + soil moisture (Free, No Key)
   2. ISRO Bhuvan LULC API — Land-use classification (Agriculture validation)
   3. Agromonitoring API — Satellite imagery, NDVI & polygon-based data
-  4. Offline Soil Database — District-level soil type/nutrient mapping
+  4. SISIndia REST API (ISRIC) — Live soil nutrient data (pH, N, P, K, OC, etc.)
+  5. Offline Soil Database — District-level soil type/nutrient mapping (fallback)
 
 Designed for resilience: every external call has a timeout + fallback
 so the demo NEVER crashes on stage.
@@ -22,6 +23,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+from app.services.sisindia_soil import fetch_sisindia_soil
 
 logger = logging.getLogger("orbital.fusion")
 
@@ -86,11 +89,23 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
     weather_task = asyncio.create_task(_fetch_weather(lat, lon))
     bhuvan_task = asyncio.create_task(_check_bhuvan_land_use(lat, lon))
     agro_task = asyncio.create_task(_fetch_agro_satellite(lat, lon))
+    sisindia_task = asyncio.create_task(fetch_sisindia_soil(lat, lon))
 
     weather = await weather_task
     land_class = await bhuvan_task
     satellite = await agro_task
-    soil = _lookup_soil(lat, lon)
+    live_soil = await sisindia_task
+
+    # Soil source priority: SISIndia (live) → offline soil_database.json
+    if live_soil is not None:
+        soil = live_soil
+        soil_source = "SISIndia API (Live)"
+        logger.info("Using live soil data from SISIndia for (%.4f, %.4f)", lat, lon)
+    else:
+        soil = _lookup_soil(lat, lon)
+        soil_source = "Soil Database (Offline)"
+        logger.info("SISIndia unavailable — using offline soil DB for (%.4f, %.4f)", lat, lon)
+
     region = _get_region_name(lat, lon)
 
     data_sources = []
@@ -109,11 +124,12 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
     else:
         data_sources.append("Agromonitoring (Fallback)")
 
-    data_sources.append("Soil Database (Offline)")
+    data_sources.append(soil_source)
 
     # Remove internal flags before returning
     weather.pop("_live", None)
     satellite.pop("_live", None)
+    soil.pop("_source", None)
 
     return {
         "weather": weather,
@@ -398,14 +414,50 @@ def _format_soil(region: dict[str, Any]) -> dict[str, Any]:
 
 
 def _get_region_name(lat: float, lon: float) -> str:
-    """Map coordinates to a human-readable region name from soil DB."""
+    """Map coordinates to a human-readable region name.
+
+    Strategy:
+      1. Check the soil DB for an exact bounding-box match.
+      2. Try reverse geocoding via Nominatim (free, no key required).
+      3. Fall back to nearest soil DB entry within 150 km.
+      4. Return a generic coordinate-based label.
+    """
+    # 1. Soil DB exact match
     for region in _SOIL_DB.get("regions", []):
         lat_range = region.get("lat_range", [0, 0])
         lon_range = region.get("lon_range", [0, 0])
         if lat_range[0] <= lat <= lat_range[1] and lon_range[0] <= lon <= lon_range[1]:
             return f"{region['city']}, {region['state']}"
 
-    # Nearest match
+    # 2. Reverse geocode via Nominatim (OpenStreetMap — free, no API key)
+    try:
+        import httpx as _httpx
+        url = (
+            f"https://nominatim.openstreetmap.org/reverse"
+            f"?lat={lat}&lon={lon}&format=json&zoom=10&accept-language=en"
+        )
+        resp = _httpx.get(url, timeout=4.0, headers={"User-Agent": "OrbitalNexus/1.0"})
+        if resp.status_code == 200:
+            addr = resp.json().get("address", {})
+            city = (
+                addr.get("city")
+                or addr.get("town")
+                or addr.get("village")
+                or addr.get("county")
+                or addr.get("state_district")
+            )
+            state = addr.get("state", "")
+            country = addr.get("country", "")
+            if city and state:
+                return f"{city}, {state}"
+            if city and country:
+                return f"{city}, {country}"
+            if state:
+                return state
+    except Exception as exc:
+        logger.debug("Reverse geocoding failed (%s) — trying soil DB nearest", exc)
+
+    # 3. Nearest soil DB match
     best, best_dist = None, float("inf")
     for region in _SOIL_DB.get("regions", []):
         lat_range = region.get("lat_range", [0, 0])
@@ -420,6 +472,7 @@ def _get_region_name(lat: float, lon: float) -> str:
     if best and best_dist < 150:
         return f"Near {best['city']}, {best['state']}"
 
+    # 4. Generic label
     return f"Region ({lat:.2f}°N, {lon:.2f}°E)"
 
 

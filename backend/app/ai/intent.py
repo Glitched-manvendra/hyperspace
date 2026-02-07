@@ -133,33 +133,144 @@ def parse_intent(query: str) -> str:
     return "general"
 
 
-def extract_location(query: str) -> tuple[float, float] | None:
+def _extract_place_names(query: str) -> list[str]:
     """
-    Extract location coordinates from the query by matching city names
-    in the soil database.
+    Extract ALL place-name candidates from a query string.
 
-    Returns:
-        (lat, lon) tuple if a location is found, None otherwise.
+    Handles:
+      - "crop in Agra and Mathura"
+      - "NDVI for Sultanpur, Amethi and Raebareli"
+      - "weather near Khatauli"
+      - "soil analysis Delhi"
+      - Case-insensitive for small towns
     """
-    query_lower = query.lower()
+    import re
 
+    places: list[str] = []
+
+    # Pattern 1: "in/for/near/at/around/of <Place1>[,/ and <Place2>]*"
+    multi_loc = re.search(
+        r"\b(?:in|for|near|at|around|of|between)\s+(.+?)(?:\?|$|\.|!)",
+        query,
+        re.IGNORECASE,
+    )
+    if multi_loc:
+        raw = multi_loc.group(1).strip()
+        # Split on " and ", ",", " & "
+        parts = re.split(r"\s+and\s+|\s*,\s*|\s*&\s*", raw)
+        for p in parts:
+            cleaned = p.strip().rstrip("?.!")
+            if cleaned and len(cleaned) > 1:
+                places.append(cleaned)
+
+    # Pattern 2: "<Place> weather/crop/soil/farm" (place before keyword)
+    before_kw = re.findall(
+        r"([A-Za-z][A-Za-z .'-]+?)\s+(?:weather|crop|soil|farm|ndvi|analysis)",
+        query,
+        re.IGNORECASE,
+    )
+    for p in before_kw:
+        cleaned = p.strip()
+        if cleaned and cleaned not in places and len(cleaned) > 1:
+            places.append(cleaned)
+
+    # Pattern 3: Capitalized words not matching common English words (fallback)
+    if not places:
+        stop = {
+            "what", "which", "show", "give", "tell", "the", "and", "for",
+            "crop", "soil", "weather", "ndvi", "analysis", "price",
+            "recommendation", "best", "should", "grow", "plant", "complete",
+            "me", "my", "how", "can", "will", "does", "near", "from",
+        }
+        caps = re.findall(r"\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)*)\b", query)
+        for c in caps:
+            if c.lower() not in stop and c not in places:
+                places.append(c)
+
+    return places
+
+
+def _geocode_place(place: str) -> tuple[float, float, str] | None:
+    """
+    Geocode a single place name.
+
+    Returns (lat, lon, display_name) or None.
+    Tries the offline soil DB first, then Nominatim.
+    """
+    place_lower = place.lower()
+
+    # 1. Offline soil DB
     for region in _SOIL_DB.get("regions", []):
         city = region.get("city", "").lower()
         state = region.get("state", "").lower()
+        # Match city name (also handle parenthetical aliases like "Vizag (Visakhapatnam)")
+        if city and (city in place_lower or place_lower in city):
+            lr, lo = region.get("lat_range", [0, 0]), region.get("lon_range", [0, 0])
+            return ((lr[0]+lr[1])/2, (lo[0]+lo[1])/2, f"{region['city']}, {region['state']}")
+        if state and state == place_lower:
+            lr, lo = region.get("lat_range", [0, 0]), region.get("lon_range", [0, 0])
+            return ((lr[0]+lr[1])/2, (lo[0]+lo[1])/2, f"{region['city']}, {region['state']}")
 
-        if city and city in query_lower:
-            lat_range = region.get("lat_range", [0, 0])
-            lon_range = region.get("lon_range", [0, 0])
-            lat = (lat_range[0] + lat_range[1]) / 2
-            lon = (lon_range[0] + lon_range[1]) / 2
-            return (lat, lon)
-
-        # Also check state name
-        if state and state in query_lower:
-            lat_range = region.get("lat_range", [0, 0])
-            lon_range = region.get("lon_range", [0, 0])
-            lat = (lat_range[0] + lat_range[1]) / 2
-            lon = (lon_range[0] + lon_range[1]) / 2
-            return (lat, lon)
+    # 2. Nominatim forward geocode (handles ANY place, including small villages)
+    try:
+        import httpx
+        # Add "India" hint for better results on small Indian towns
+        search_q = f"{place}, India" if not any(c in place.lower() for c in ["india", ","]) else place
+        url = (
+            f"https://nominatim.openstreetmap.org/search"
+            f"?q={search_q}&format=json&limit=1&accept-language=en"
+        )
+        resp = httpx.get(url, timeout=5.0, headers={"User-Agent": "OrbitalNexus/1.0"})
+        if resp.status_code == 200:
+            results = resp.json()
+            if results:
+                return (
+                    float(results[0]["lat"]),
+                    float(results[0]["lon"]),
+                    results[0].get("display_name", place),
+                )
+    except Exception:
+        pass
 
     return None
+
+
+def extract_location(query: str) -> tuple[float, float] | None:
+    """
+    Extract a single location from the query (backwards-compatible).
+
+    Returns (lat, lon) for the first location found, or None.
+    """
+    places = _extract_place_names(query)
+    for place in places:
+        result = _geocode_place(place)
+        if result:
+            return (result[0], result[1])
+    return None
+
+
+def extract_locations(query: str) -> list[dict]:
+    """
+    Extract ALL locations mentioned in a query.
+
+    Supports multi-city queries like:
+      - "Show NDVI for Agra and Mathura"
+      - "Compare crops in Sultanpur, Amethi and Raebareli"
+
+    Returns:
+        [{"lat": ..., "lon": ..., "name": "Agra, Uttar Pradesh"}, ...]
+    """
+    places = _extract_place_names(query)
+    results: list[dict] = []
+    seen: set[str] = set()
+
+    for place in places:
+        key = place.lower().strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        geo = _geocode_place(place)
+        if geo:
+            results.append({"lat": geo[0], "lon": geo[1], "name": geo[2]})
+
+    return results

@@ -47,16 +47,35 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
  * Send a natural language query to the backend.
  *
  * @param query - The user's question about satellite data
- * @param lat - Latitude (default: Greater Noida)
- * @param lon - Longitude (default: Greater Noida)
+ * @param lat - Latitude (default: central India)
+ * @param lon - Longitude (default: central India)
  * @returns Structured query response with fused data and UI instructions
  */
 export async function queryBackend(
   query: string,
-  lat = 28.4744,
-  lon = 77.504,
+  lat = 22.9734,
+  lon = 78.6569,
 ): Promise<QueryResponse> {
   const res = await axios.post<QueryResponse>(`${API_BASE}/api/query`, {
+    query,
+    lat,
+    lon,
+  });
+  return res.data;
+}
+
+/**
+ * Send a query that may mention multiple cities.
+ *
+ * The backend parses ALL location names from the query, geocodes each,
+ * and returns an array of QueryResponse — one per location.
+ */
+export async function multiQueryBackend(
+  query: string,
+  lat = 22.9734,
+  lon = 78.6569,
+): Promise<QueryResponse[]> {
+  const res = await axios.post<QueryResponse[]>(`${API_BASE}/api/multi-query`, {
     query,
     lat,
     lon,

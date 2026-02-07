@@ -51,7 +51,55 @@
 /* Leaflet overrides */
 .leaflet-container {
   font-family: "Outfit", sans-serif;
+  cursor: crosshair !important;
+}
+.leaflet-container .leaflet-grab {
+  cursor: crosshair !important;
 }
 .dark .leaflet-tile-pane {
   filter: brightness(0.7) contrast(1.1) saturate(0.8);
+}
+
+/* Map click marker — pulsing dot animation */
+.map-click-marker {
+  background: transparent;
+  border: none;
+}
+.click-marker-dot {
+  width: 12px;
+  height: 12px;
+  background: #88cc00;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(136, 204, 0, 0.6);
+}
+.click-marker-pulse {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(136, 204, 0, 0.3);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: marker-pulse 1.5s ease-out infinite;
+}
+@keyframes marker-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Map container — make sure search bar doesn't clash with Leaflet controls */
+.map-container .leaflet-top.leaflet-left {
+  top: 56px;
 }

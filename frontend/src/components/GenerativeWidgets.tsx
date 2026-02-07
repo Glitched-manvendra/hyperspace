@@ -55,14 +55,35 @@ interface PriceTrendProps {
 }
 
 export function PriceTrendChart({ title, subtitle, data }: PriceTrendProps) {
-  const points: { label: string; value: number }[] = data?.points ?? [
-    { label: "Jan", value: 1200 },
-    { label: "Feb", value: 1350 },
-    { label: "Mar", value: 1100 },
-    { label: "Apr", value: 980 },
-    { label: "May", value: 1450 },
-    { label: "Jun", value: 1600 },
-  ];
+  // Normalise: backend may send {label,value} or {month,...multi-series}
+  let points: { label: string; value: number }[] = [];
+  if (data?.points && data.points.length > 0) {
+    const first = data.points[0];
+    if ("label" in first && "value" in first) {
+      // Simple single-line format
+      points = data.points;
+    } else if ("month" in first) {
+      // Multi-series format — flatten to first series value
+      const seriesKeys = Object.keys(first).filter((k) => k !== "month");
+      const key = seriesKeys[0] ?? "value";
+      points = data.points.map((p: Record<string, unknown>) => ({
+        label: String(p.month ?? ""),
+        value: Number(p[key] ?? 0),
+      }));
+    } else {
+      points = data.points;
+    }
+  }
+  if (points.length === 0) {
+    points = [
+      { label: "Jan", value: 1200 },
+      { label: "Feb", value: 1350 },
+      { label: "Mar", value: 1100 },
+      { label: "Apr", value: 980 },
+      { label: "May", value: 1450 },
+      { label: "Jun", value: 1600 },
+    ];
+  }
   const unit: string = data?.unit ?? "₹/qtl";
 
   return (
