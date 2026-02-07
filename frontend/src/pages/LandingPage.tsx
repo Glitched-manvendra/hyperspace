@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   Satellite,
   Sprout,
@@ -15,6 +16,10 @@ import {
   Rocket,
   Globe,
   Zap,
+  Twitter,
+  Github,
+  Linkedin,
+  Mail,
 } from "lucide-react";
 
 /* ─── animation presets ─── */
@@ -40,6 +45,12 @@ interface LandingPageProps {
    LANDING PAGE — Space-Glass Aesthetic
    ═══════════════════════════════════════════════════════════════════ */
 export default function LandingPage({ onLaunch }: LandingPageProps) {
+  const [visibleSections, setVisibleSections] = useState({ problem: true, solution: true });
+
+  const toggleSection = (section: 'problem' | 'solution') => {
+    setVisibleSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   return (
     <div className="h-screen overflow-y-auto custom-scrollbar bg-bg text-text relative">
       {/* ── Global ambient blobs ── */}
@@ -57,10 +68,10 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
       <HeroSection onLaunch={onLaunch} />
 
       {/* ── PROBLEM ── */}
-      <ProblemSection />
+      {visibleSections.problem && <ProblemSection />}
 
       {/* ── SOLUTION ── */}
-      <SolutionSection />
+      {visibleSections.solution && <SolutionSection />}
 
       {/* ── DATA SOURCES ── */}
       <DataSourcesSection />
@@ -72,7 +83,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
       <CtaBand onLaunch={onLaunch} />
 
       {/* ── FOOTER ── */}
-      <Footer />
+      <Footer onToggle={toggleSection} />
     </div>
   );
 }
@@ -94,10 +105,10 @@ function Nav({ onLaunch }: { onLaunch: () => void }) {
         </div>
 
         <div className="hidden sm:flex items-center gap-8 text-sm text-sage">
-           <a href="#problem" className="hover:text-primary transition font-medium">Problem</a>
-           <a href="#solution" className="hover:text-primary transition font-medium">Solution</a>
-           <a href="#data" className="hover:text-primary transition font-medium">Data</a>
-           <a href="#trust" className="hover:text-primary transition font-medium">Trust</a>
+          <a href="#problem" className="hover:text-primary transition font-medium">Problem</a>
+          <a href="#solution" className="hover:text-primary transition font-medium">Solution</a>
+          <a href="#data" className="hover:text-primary transition font-medium">Data</a>
+          <a href="#trust" className="hover:text-primary transition font-medium">Trust</a>
         </div>
 
         <button
@@ -138,15 +149,15 @@ function HeroSection({ onLaunch }: { onLaunch: () => void }) {
         className="relative z-10 max-w-4xl text-center flex flex-col items-center gap-6"
       >
         <motion.div
-           variants={fadeUp}
-           custom={0}
-           className="inline-flex items-center gap-2 px-4 py-2 bg-surface border-2 border-border shadow-neo-sm"
-         >
-           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-           <span className="text-xs text-text uppercase tracking-wider font-bold">
-             Hyperspace Innovation Hackathon 2026 — PS #4
-           </span>
-         </motion.div>
+          variants={fadeUp}
+          custom={0}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-surface border-2 border-border shadow-neo-sm"
+        >
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs text-text uppercase tracking-wider font-bold">
+            Hyperspace Innovation Hackathon 2026 — PS #4
+          </span>
+        </motion.div>
 
         <motion.h1
           variants={fadeUp}
@@ -154,10 +165,10 @@ function HeroSection({ onLaunch }: { onLaunch: () => void }) {
           className="text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-tight"
         >
           Guided Farming with{" "}
-           <span className="text-primary underline decoration-4 decoration-border">
-             Satellite Intelligence
-           </span>
-         </motion.h1>
+          <span className="text-primary underline decoration-4 decoration-border">
+            Satellite Intelligence
+          </span>
+        </motion.h1>
 
         <motion.p
           variants={fadeUp}
@@ -186,12 +197,12 @@ function HeroSection({ onLaunch }: { onLaunch: () => void }) {
             </span>
           </motion.button>
           <a
-             href="#problem"
-             className="neo-button px-7 py-4 bg-surface text-text font-bold"
-           >
-             Learn More
-             <ChevronDown className="w-4 h-4 ml-2 inline" />
-           </a>
+            href="#problem"
+            className="neo-button px-7 py-4 bg-surface text-text font-bold"
+          >
+            Learn More
+            <ChevronDown className="w-4 h-4 ml-2 inline" />
+          </a>
         </motion.div>
 
         {/* Stat chips */}
@@ -281,13 +292,14 @@ function ProblemSection() {
               key={c.title}
               variants={fadeUp}
               custom={i}
-              className="group relative neo-box p-8"
+              whileHover={{ scale: 1.05 }}
+              className="group relative neo-box p-8 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]"
             >
-              <div className={`w-12 h-12 rounded-xl bg-white/5 border border-white/10 grid place-items-center mb-6 ${c.color}`}>
+              <div className={`w-12 h-12 rounded-xl bg-white/5 border border-white/10 grid place-items-center mb-6 ${c.color} transition-transform duration-300 group-hover:scale-110`}>
                 <c.icon className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-display font-bold mb-3">{c.title}</h3>
-              <p className="text-sm text-sage leading-relaxed">{c.body}</p>
+              <h3 className="text-xl font-display font-bold mb-3 transition-colors duration-300 group-hover:text-primary">{c.title}</h3>
+              <p className="text-sm text-sage leading-relaxed transition-all duration-300 group-hover:text-white group-hover:text-base">{c.body}</p>
               {/* Hover glow */}
               <div className={`pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${c.glow}`} />
             </motion.div>
@@ -424,11 +436,11 @@ function DataSourcesSection() {
               variants={fadeUp}
               custom={i}
               whileHover={{ y: -4 }}
-               className="neo-box p-6 text-center"
-             >
-               <div className={`w-12 h-12 border-2 border-border grid place-items-center mx-auto mb-4 bg-surface ${s.color}`}>
-                 <s.icon className="w-6 h-6" />
-               </div>
+              className="neo-box p-6 text-center"
+            >
+              <div className={`w-12 h-12 border-2 border-border grid place-items-center mx-auto mb-4 bg-surface ${s.color}`}>
+                <s.icon className="w-6 h-6" />
+              </div>
               <h3 className="font-display font-bold mb-1">{s.name}</h3>
               <p className="text-xs text-sage mb-3">{s.desc}</p>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 rounded-full px-3 py-1">
@@ -484,11 +496,11 @@ function TrustSection() {
               variants={fadeUp}
               custom={i}
               whileHover={{ y: -4 }}
-               className="neo-box p-8 text-center"
-             >
-               <div className={`w-14 h-14 rounded-full border-2 border-border grid place-items-center mx-auto mb-5 bg-surface ${b.color}`}>
-                 <b.icon className="w-6 h-6" />
-               </div>
+              className="neo-box p-8 text-center"
+            >
+              <div className={`w-14 h-14 rounded-full border-2 border-border grid place-items-center mx-auto mb-5 bg-surface ${b.color}`}>
+                <b.icon className="w-6 h-6" />
+              </div>
               <h3 className="font-display font-bold mb-2">{b.label}</h3>
               <p className="text-sm text-sage leading-relaxed">{b.desc}</p>
             </motion.div>
@@ -509,9 +521,9 @@ function CtaBand({ onLaunch }: { onLaunch: () => void }) {
         initial={{ opacity: 0, scale: 0.97 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
-         transition={{ duration: 0.5 }}
-         className="max-w-4xl mx-auto neo-box relative overflow-hidden bg-primary"
-       >
+        transition={{ duration: 0.5 }}
+        className="max-w-4xl mx-auto neo-box relative overflow-hidden bg-primary"
+      >
         {/* Glow behind */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
 
@@ -523,15 +535,15 @@ function CtaBand({ onLaunch }: { onLaunch: () => void }) {
             Enter the dashboard, type a question in plain language, and get satellite-backed answers in seconds.
           </p>
           <motion.button
-             whileHover={{ scale: 1.05 }}
-             whileTap={{ scale: 0.95 }}
-             onClick={onLaunch}
-             className="group inline-flex items-center gap-2 px-8 py-4 bg-text text-bg font-bold rounded-none shadow-neo hover:shadow-neo-lg transition-all"
-           >
-             <Rocket className="w-4 h-4" />
-             Open Orbital Nexus
-             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-           </motion.button>
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onLaunch}
+            className="group inline-flex items-center gap-2 px-8 py-4 bg-text text-bg font-bold rounded-none shadow-neo hover:shadow-neo-lg transition-all"
+          >
+            <Rocket className="w-4 h-4" />
+            Open Orbital Nexus
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
         </div>
       </motion.div>
     </section>
@@ -541,22 +553,86 @@ function CtaBand({ onLaunch }: { onLaunch: () => void }) {
 /* ═══════════════════════════════════════════════════════════════════
    FOOTER
    ═══════════════════════════════════════════════════════════════════ */
-function Footer() {
+interface FooterProps {
+  onToggle: (section: 'problem' | 'solution') => void;
+}
+
+function Footer({ onToggle }: FooterProps) {
   return (
-    <footer className="border-t-2 border-border bg-surface py-10 px-6">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-sage">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg overflow-hidden">
-            <img src="/logo.png" alt="Orbital Nexus" className="w-full h-full object-cover" />
+    <footer className="border-t border-white/10 bg-slate-900/90 backdrop-blur-md pt-16 pb-8 px-6 relative overflow-hidden">
+      {/* Footer Ambient */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        {/* Col 1: Brand */}
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-xl overflow-hidden shadow-neo border border-white/10">
+              <img src="/logo.png" alt="Orbital Nexus" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-xl font-display font-bold text-white tracking-wide">Orbital<br />Nexus</span>
           </div>
-          <span className="font-display font-bold text-white/80">Orbital Nexus</span>
+          <p className="text-white/90 text-sm leading-relaxed max-w-xs">
+            Empowering Indian farmers with satellite intelligence. Bridging the gap between space data and soil reality.
+          </p>
+          <div className="text-xs text-white/80 font-mono">
+            © 2026 Orbital Nexus. All rights reserved.
+          </div>
         </div>
-        <p>Built with ❤️ in Ghaziabad · Hyperspace 2026</p>
-        <div className="flex gap-5">
-          <a href="#problem" className="hover:text-white transition">Problem</a>
-          <a href="#solution" className="hover:text-white transition">Solution</a>
-          <a href="#trust" className="hover:text-white transition">Trust</a>
+
+        {/* Col 2: Quick Links */}
+        <div className="flex flex-col gap-4">
+          <h4 className="font-display font-bold text-white">Quick Links</h4>
+          <div className="flex flex-col gap-2 text-sm text-white/90">
+            <button onClick={() => onToggle('problem')} className="text-left hover:text-white transition-colors w-fit">The Problem</button>
+            <button onClick={() => onToggle('solution')} className="text-left hover:text-white transition-colors w-fit">Our Solution</button>
+            <a href="#data" className="hover:text-white transition-colors w-fit">Data Sources</a>
+            <a href="#trust" className="hover:text-white transition-colors w-fit">Trust & Transparency</a>
+          </div>
         </div>
+
+        {/* Col 3: Socials */}
+        <div className="flex flex-col gap-4">
+          <h4 className="font-display font-bold text-white">Connect</h4>
+          <div className="flex gap-4">
+            {[
+              { icon: Twitter, href: "#" },
+              { icon: Github, href: "#" },
+              { icon: Linkedin, href: "#" },
+              { icon: Mail, href: "mailto:hello@orbitalnexus.online" },
+            ].map((s, i) => (
+              <a
+                key={i}
+                href={s.href}
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 grid place-items-center text-white/90 hover:text-white hover:bg-primary/20 hover:border-primary/50 transition-all duration-300"
+              >
+                <s.icon className="w-5 h-5" />
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Col 4: Newsletter */}
+        <div className="flex flex-col gap-4">
+          <h4 className="font-display font-bold text-white">Stay Updated</h4>
+          <p className="text-xs text-white/90 mb-2">Get the latest satellite insights and farm predictions.</p>
+          <div className="flex flex-col gap-3">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/50 focus:outline-none focus:border-primary/50 transition-colors"
+            />
+            <button className="px-4 py-3 bg-primary text-black font-bold rounded-lg text-sm hover:bg-primary/90 transition-colors shadow-neo-sm">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/5 pt-8 text-center">
+        <p className="text-xs text-white/50">
+          @ Orbital-Nexus 2026
+        </p>
       </div>
     </footer>
   );
