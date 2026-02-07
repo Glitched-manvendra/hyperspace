@@ -74,15 +74,14 @@ def _build_context_prompt(
 
     crops_str = ""
     if crop_prediction:
-        crops_str = "\n".join(
-            f"  {i+1}. {p['crop'].capitalize()} — {int(p['confidence']*100)}% match"
-            + (
-                f" | MSP ₹{p['market']['msp']:,}/qtl, Range ₹{p['market']['price_min']:,}-{p['market']['price_max']:,}/qtl"
-                if p.get("market")
-                else ""
-            )
-            for i, p in enumerate(crop_prediction[:5])
-        )
+        lines = []
+        for i, p in enumerate(crop_prediction[:5]):
+            line = f"  {i+1}. {p['crop'].capitalize()} — {int(p['confidence']*100)}% match"
+            m = p.get("market")
+            if m and m.get("msp") is not None and m.get("price_min") is not None and m.get("price_max") is not None:
+                line += f" | MSP ₹{m['msp']:,}/qtl, Range ₹{m['price_min']:,}-{m['price_max']:,}/qtl"
+            lines.append(line)
+        crops_str = "\n".join(lines)
 
     return f"""User Query: "{query}"
 Detected Intent: {intent}
