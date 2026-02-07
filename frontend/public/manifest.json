@@ -1,0 +1,26 @@
+{
+  "name": "Orbital Nexus",
+  "short_name": "OrbitalNexus",
+  "description": "AI-Guided Farming powered by Multi-Satellite Data Fusion — crop recommendations, price predictions, and soil health alerts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#34d399",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["agriculture", "productivity", "utilities"],
+  "lang": "en-IN"
+}

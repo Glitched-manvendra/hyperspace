@@ -7,6 +7,9 @@ export interface UIInstruction {
   value: string;
   subtitle: string;
   color: string;
+  /** Rich data payload for generative widgets (charts, lists, etc.) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: Record<string, any>;
 }
 
 /** Fused satellite data summary */

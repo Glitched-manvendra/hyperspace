@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Send, Loader2 } from "lucide-react";
 
 interface PromptBarProps {
   onSubmit: (query: string) => void;
@@ -6,10 +7,9 @@ interface PromptBarProps {
 }
 
 /**
- * PromptBar — ChatGPT-style input at the bottom of the screen
+ * PromptBar — ChatGPT-style input at the bottom (Space-Glass)
  *
  * User types natural language queries about satellite data.
- * Includes a progress indicator when waiting for backend response.
  */
 function PromptBar({ onSubmit, loading }: PromptBarProps) {
   const [query, setQuery] = useState("");
@@ -23,11 +23,11 @@ function PromptBar({ onSubmit, loading }: PromptBarProps) {
   };
 
   return (
-    <div className="border-t border-gray-800 bg-nexus-panel">
+    <div className="glass-panel border-t border-glass-border">
       {/* Progress bar */}
       {loading && (
-        <div className="h-0.5 bg-gray-800">
-          <div className="h-full bg-nexus-accent animate-[progress_1.5s_ease-in-out_infinite] w-1/3 rounded-full" />
+        <div className="h-0.5 bg-white/5">
+          <div className="h-full bg-gradient-to-r from-primary to-accent animate-[progress_1.5s_ease-in-out_infinite] w-1/3 rounded-full" />
         </div>
       )}
 
@@ -37,15 +37,25 @@ function PromptBar({ onSubmit, loading }: PromptBarProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask about satellite data... (e.g., 'What crop should I grow in Greater Noida?')"
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-nexus-accent focus:ring-1 focus:ring-nexus-accent transition-colors"
+          className="flex-1 bg-white/5 border border-glass-border rounded-xl px-4 py-3 text-sm text-white placeholder-sage/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="bg-nexus-accent hover:bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium px-6 py-3 rounded-lg text-sm transition-colors"
+          className="bg-primary hover:bg-emerald-600 disabled:bg-white/10 disabled:text-sage/50 text-white font-medium px-5 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
         >
-          {loading ? "Analyzing..." : "Send"}
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Analyzing…
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Send
+            </>
+          )}
         </button>
       </form>
     </div>
