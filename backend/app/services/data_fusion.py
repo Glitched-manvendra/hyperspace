@@ -19,6 +19,7 @@ import json
 import math
 import logging
 import os
+import time as _time
 from pathlib import Path
 from typing import Any
 
@@ -31,8 +32,14 @@ logger = logging.getLogger("orbital.fusion")
 # ── API Keys ────────────────────────────────────────────────────────
 AGRO_GEOCODING_KEY = os.getenv("AGRO_GEOCODING_KEY")
 AGRO_SATELLITE_KEY = os.getenv("AGRO_SATELLITE_KEY")
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")  # weatherapi.com free tier
 
 logger = logging.getLogger("orbital.fusion")
+
+# ── Weather cache (avoid hitting Open-Meteo rate limits) ────────────
+# Key: rounded (lat, lon) → Value: (timestamp, weather_dict)
+_weather_cache: dict[tuple[float, float], tuple[float, dict[str, Any]]] = {}
+_WEATHER_CACHE_TTL = 600  # 10 minutes — weather doesn't change that fast
 
 # ── Soil Database (loaded once at import time) ──────────────────────
 _SOIL_DB_PATH = (
@@ -72,7 +79,7 @@ _TIMEOUT = httpx.Timeout(connect=3.0, read=5.0, write=3.0, pool=3.0)
 async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
     """
     Master fusion function.
-    Gathers weather, soil, land classification, and satellite NDVI for a coordinate pair.
+    Gathers weather, soil, land classification, satellite NDVI, and market brain for a coordinate pair.
 
     Returns:
         {
@@ -80,11 +87,13 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
             "soil": { "type": "Loamy", "ph": 7.2, ... },
             "land_classification": "Verified Agriculture (ISRO Bhuvan)",
             "satellite": { "ndvi": 0.62, "source": "Agromonitoring" },
+            "market_brain": { "top_commodities": [...], "source": "Gemini AI", ... },
             "region": "Greater Noida, Uttar Pradesh",
-            "data_sources": ["Open-Meteo", "ISRO Bhuvan LULC", "Agromonitoring", "Soil Database"]
+            "data_sources": ["Open-Meteo", "ISRO Bhuvan LULC", "Agromonitoring", "Soil Database", "Market Brain"]
         }
     """
     import asyncio
+    from app.services.market_brain import get_market_brain
 
     weather_task = asyncio.create_task(_fetch_weather(lat, lon))
     bhuvan_task = asyncio.create_task(_check_bhuvan_land_use(lat, lon))
@@ -95,6 +104,12 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
     land_class = await bhuvan_task
     satellite = await agro_task
     live_soil = await sisindia_task
+    
+    # Get region name early for market brain
+    region = _get_region_name(lat, lon)
+    
+    # Fetch market brain data (with Gemini analysis)
+    market_brain = await get_market_brain(lat, lon, region)
 
     # Soil source priority: SISIndia (live) → offline soil_database.json
     if live_soil is not None:
@@ -105,8 +120,6 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
         soil = _lookup_soil(lat, lon)
         soil_source = "Soil Database (Offline)"
         logger.info("SISIndia unavailable — using offline soil DB for (%.4f, %.4f)", lat, lon)
-
-    region = _get_region_name(lat, lon)
 
     data_sources = []
     if weather.get("_live"):
@@ -125,6 +138,10 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
         data_sources.append("Agromonitoring (Fallback)")
 
     data_sources.append(soil_source)
+    
+    # Add market brain to data sources
+    if market_brain:
+        data_sources.append(f"Market Brain ({market_brain.get('source', 'Analysis')})")
 
     # Remove internal flags before returning
     weather.pop("_live", None)
@@ -136,6 +153,7 @@ async def get_location_context(lat: float, lon: float) -> dict[str, Any]:
         "soil": soil,
         "land_classification": land_class,
         "satellite": satellite,
+        "market_brain": market_brain,
         "region": region,
         "data_sources": data_sources,
     }
@@ -154,8 +172,19 @@ async def _fetch_weather(lat: float, lon: float) -> dict[str, Any]:
       https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}
         &current=temperature_2m,relative_humidity_2m,rain,soil_moisture_0_to_1cm
 
-    Fallback: Returns plausible Indian summer defaults if API is unreachable.
+    Uses an in-memory cache (10 min TTL) to avoid hitting the daily rate limit.
+    Fallback: Returns location-aware estimates if API is unreachable.
     """
+    # Round to 2 decimals for cache key (~1 km precision)
+    cache_key = (round(lat, 2), round(lon, 2))
+
+    # Check cache first
+    if cache_key in _weather_cache:
+        cached_ts, cached_data = _weather_cache[cache_key]
+        if _time.time() - cached_ts < _WEATHER_CACHE_TTL:
+            logger.info("Weather cache hit for (%.2f, %.2f)", lat, lon)
+            return {**cached_data}  # return a copy
+
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
@@ -168,8 +197,12 @@ async def _fetch_weather(lat: float, lon: float) -> dict[str, Any]:
             resp.raise_for_status()
             data = resp.json()
 
+        # Open-Meteo returns {"error": true} when rate-limited
+        if data.get("error"):
+            raise ValueError(data.get("reason", "Open-Meteo error response"))
+
         current = data.get("current", {})
-        return {
+        result = {
             "temp": current.get("temperature_2m", 30.0),
             "humidity": current.get("relative_humidity_2m", 55),
             "rain": current.get("rain", 0.0),
@@ -177,15 +210,131 @@ async def _fetch_weather(lat: float, lon: float) -> dict[str, Any]:
             "_live": True,
         }
 
-    except (httpx.HTTPError, httpx.TimeoutException, KeyError, Exception) as exc:
-        logger.warning("Open-Meteo API failed (%s) — using fallback", exc)
-        return {
-            "temp": 32.5,
-            "humidity": 60,
-            "rain": 0.0,
-            "moisture": 0.30,
-            "_live": False,
-        }
+        # Store in cache
+        _weather_cache[cache_key] = (_time.time(), {**result})
+        return result
+
+    except (httpx.HTTPError, httpx.TimeoutException, KeyError, ValueError, Exception) as exc:
+        logger.warning("Open-Meteo API failed (%s) — trying WeatherAPI fallback", exc)
+
+    # ── Fallback: WeatherAPI.com (free tier, 1M calls/month) ──
+    if WEATHER_API_KEY:
+        try:
+            result = await _fetch_weatherapi(lat, lon)
+            _weather_cache[cache_key] = (_time.time(), {**result})
+            return result
+        except Exception as exc2:
+            logger.warning("WeatherAPI also failed (%s) — using estimates", exc2)
+
+    return _estimate_weather(lat, lon)
+
+
+async def _fetch_weatherapi(lat: float, lon: float) -> dict[str, Any]:
+    """
+    Fetch current weather from WeatherAPI.com (free tier fallback).
+
+    Endpoint: https://api.weatherapi.com/v1/current.json?key=KEY&q=lat,lon
+    """
+    url = (
+        f"https://api.weatherapi.com/v1/current.json"
+        f"?key={WEATHER_API_KEY}&q={lat},{lon}"
+    )
+    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+
+    current = data.get("current", {})
+    # WeatherAPI provides precip_mm (last hour), humidity, temp_c
+    # It does NOT provide soil moisture — estimate from humidity + rain
+    humidity = current.get("humidity", 55)
+    precip = current.get("precip_mm", 0.0)
+    moisture = round(0.15 + (humidity / 100) * 0.25 + precip * 0.02, 2)
+    moisture = min(0.60, max(0.05, moisture))
+
+    result = {
+        "temp": current.get("temp_c", 30.0),
+        "humidity": humidity,
+        "rain": precip,
+        "moisture": moisture,
+        "_live": True,
+    }
+    logger.info("WeatherAPI.com success for (%.4f, %.4f): %.1f°C", lat, lon, result["temp"])
+    return result
+
+
+def _estimate_weather(lat: float, lon: float) -> dict[str, Any]:
+    """
+    Estimate weather based on latitude, longitude, and month.
+
+    Uses simple climate heuristics so that different locations
+    get meaningfully different fallback values instead of identical ones.
+    """
+    import datetime
+
+    month = datetime.datetime.now().month
+    abs_lat = abs(lat)
+
+    # ── Temperature estimate ──
+    # Base: equator ~30°C, drops ~0.6°C per degree of latitude
+    base_temp = 30.0 - (abs_lat - 10) * 0.55
+
+    # Seasonal adjustment (Northern Hemisphere focus for India)
+    if lat > 0:  # Northern hemisphere
+        if month in (12, 1, 2):       # Winter
+            base_temp -= 8.0
+        elif month in (3, 4, 5):      # Summer / pre-monsoon
+            base_temp += 4.0
+        elif month in (6, 7, 8, 9):   # Monsoon
+            base_temp += 1.0
+        else:                          # Post-monsoon
+            base_temp -= 2.0
+
+    # Altitude proxy: higher lat in India = more hilly (rough)
+    if abs_lat > 30:
+        base_temp -= 3.0
+
+    # Coastal moderation: lon near coasts (< 74 or > 85 in India)
+    if 72 < lon < 74 or 85 < lon < 90:
+        base_temp = base_temp * 0.95 + 1.0  # moderate towards ~26°C
+
+    # Add small deterministic variation from lon so nearby cities differ
+    micro_variation = math.sin(lat * 3.7 + lon * 2.3) * 1.5
+    temp = round(base_temp + micro_variation, 1)
+    temp = max(5.0, min(48.0, temp))  # clamp
+
+    # ── Humidity estimate ──
+    # Coastal → higher, inland → lower; monsoon months → higher
+    base_humidity = 50.0
+    if month in (6, 7, 8, 9):
+        base_humidity += 20.0
+    elif month in (12, 1, 2):
+        base_humidity -= 10.0
+
+    # Coastal bump
+    if lon < 74 or lon > 86:
+        base_humidity += 12.0
+
+    humidity_variation = math.cos(lat * 2.1 + lon * 1.8) * 5.0
+    humidity = round(base_humidity + humidity_variation, 1)
+    humidity = max(15.0, min(95.0, humidity))
+
+    # ── Rainfall estimate ──
+    rain = 0.0
+    if month in (6, 7, 8, 9):
+        rain = round(2.0 + abs(math.sin(lon * 0.5)) * 6.0, 1)
+
+    # ── Soil moisture ──
+    moisture = round(0.20 + (humidity - 40) * 0.003 + rain * 0.01, 2)
+    moisture = max(0.05, min(0.60, moisture))
+
+    return {
+        "temp": temp,
+        "humidity": humidity,
+        "rain": rain,
+        "moisture": moisture,
+        "_live": False,
+    }
 
 
 # =====================================================================

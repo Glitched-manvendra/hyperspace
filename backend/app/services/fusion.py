@@ -4,9 +4,10 @@ Data Fusion Service - Orbital Nexus
 Handles fusing and summarizing multi-satellite datasets.
 Returns structured data for API responses and UI generation.
 
-Now integrates with:
+Integrates with:
   - Live data from data_fusion.py engine
-  - CropEngine predictions (KNN-based crop recommendation)
+  - Gemini AI (demand-driven crop prediction)
+  - Market Brain (mandi price intelligence)
   - Market trends (price intelligence)
 """
 
@@ -21,13 +22,20 @@ def get_fused_data(
     live_weather: dict[str, Any] | None = None,
     region_name: str | None = None,
     data_sources: list[str] | None = None,
+    live_context: dict[str, Any] | None = None,
 ) -> FusedDataSummary:
     """
     Build a FusedDataSummary from live weather data.
 
     If live_weather is provided (from Open-Meteo), uses real values.
+    Reads satellite NDVI from live_context["satellite"]["ndvi"] when available.
     Otherwise falls back to demo data.
     """
+    # Pull live satellite NDVI if available (from Agromonitoring / seasonal estimate)
+    satellite = (live_context or {}).get("satellite", {})
+    live_ndvi = satellite.get("ndvi")
+    ndvi_value = round(live_ndvi, 3) if live_ndvi is not None else 0.68
+
     if live_weather:
         return FusedDataSummary(
             region=region_name or _get_region_name(lat, lon),
@@ -35,8 +43,9 @@ def get_fused_data(
             lon=lon,
             temperature_avg_c=round(live_weather.get("temp", 32.5), 1),
             rainfall_mm=round(live_weather.get("rain", 0.0), 1),
+            humidity_pct=round(float(live_weather.get("humidity", 55)), 1),
             soil_moisture_pct=round(live_weather.get("moisture", 0.30) * 100, 1),
-            ndvi_avg=0.68,  # NDVI still mock (would need Sentinel Hub)
+            ndvi_avg=ndvi_value,
             data_sources=data_sources or ["Open-Meteo", "Soil Database"],
         )
 
@@ -47,8 +56,9 @@ def get_fused_data(
         lon=lon,
         temperature_avg_c=32.5,
         rainfall_mm=145.0,
+        humidity_pct=55.0,
         soil_moisture_pct=42.3,
-        ndvi_avg=0.68,
+        ndvi_avg=ndvi_value,
         data_sources=["MODIS", "Sentinel-2", "NASA SMAP", "Open-Meteo"],
     )
 
@@ -78,7 +88,7 @@ def build_ui_instructions(
         UIInstruction(
             card_type="stat",
             title="Humidity",
-            value=f"{(live_context or {}).get('weather', {}).get('humidity', 55)}%",
+            value=f"{fused_data.humidity_pct}%",
             subtitle="Relative humidity",
             color="cyan",
         ),
@@ -175,20 +185,27 @@ def build_ui_instructions(
             )
         )
 
-    # -- Recommended crops list (now powered by CropEngine) --
+    # -- Recommended crops list (Gemini AI demand-driven / Seasonal fallback) --
     crop_prediction = (live_context or {}).get("crop_prediction", [])
+    crop_source = (live_context or {}).get("crop_source", "Gemini AI")
     if crop_prediction:
-        # Use CropEngine's KNN predictions
         items = []
         for pred in crop_prediction:
             crop_name = pred["crop"].capitalize()
             market = pred.get("market", {})
+            # Gemini reasoning + recommended action
+            reasoning = pred.get("reasoning") or get_price_display(pred["crop"])
+            action = pred.get("recommended_action", "")
+            if action:
+                reasoning = f"{reasoning} → {action}"
             items.append(
                 {
                     "name": crop_name,
                     "confidence": pred["confidence"],
-                    "season": market.get("season", _get_season(crop_name)),
-                    "reasoning": get_price_display(pred["crop"]),
+                    "season": pred.get("season") or market.get("season", _get_season(crop_name)),
+                    "reasoning": reasoning,
+                    "demand_score": pred.get("demand_score"),
+                    "demand_trend": pred.get("demand_trend"),
                 }
             )
 
@@ -196,8 +213,8 @@ def build_ui_instructions(
             UIInstruction(
                 card_type="list",
                 title="AI Crop Prediction",
-                value=f"{len(items)} crops matched",
-                subtitle="KNN model · Soil + Weather fusion",
+                value=f"{len(items)} rising-demand crops",
+                subtitle=crop_source,
                 color="green",
                 data={"items": items},
             )
@@ -268,20 +285,58 @@ def build_ui_instructions(
             )
         )
 
+    # -- Market Crop Brain (NEW: Gemini-powered mandi demand analysis) --
+    market_brain = (live_context or {}).get("market_brain")
+    if market_brain and market_brain.get("top_commodities"):
+        top_commodities = market_brain["top_commodities"][:5]  # Top 5 for UI
+        items = []
+        for commodity in top_commodities:
+            items.append({
+                "name": commodity["name"],
+                "score": commodity["demand_score"],
+                "trend": commodity["demand_trend"],
+                "confidence": commodity.get("confidence", "medium"),
+                "reasoning": commodity.get("reasoning", "Market analysis")
+            })
+        
+        cards.append(
+            UIInstruction(
+                card_type="list",
+                title="📊 Market Crop Brain",
+                value=f"Top {len(items)} demand crops",
+                subtitle=f"{market_brain.get('source', 'Market Analysis')} · {market_brain.get('region', 'Region')}",
+                color="purple",
+                data={"items": items}
+            )
+        )
+
     # -- Intent-specific bonus cards --
     if intent == "crop_recommendation":
+        crop_source = (live_context or {}).get("crop_source", "Gemini AI")
         top_crop = (
             crop_prediction[0]["crop"].capitalize()
             if crop_prediction
             else (recommended[0] if "recommended" in dir() and recommended else "Wheat")
         )
         top_conf = crop_prediction[0]["confidence"] if crop_prediction else 0.85
+        top_demand = crop_prediction[0].get("demand_score", 0) if crop_prediction else 0
+        top_action = crop_prediction[0].get("recommended_action", "") if crop_prediction else ""
+        top_reasoning = (
+            crop_prediction[0].get("reasoning", "")
+            if crop_prediction
+            else ""
+        )
+        brain_subtitle = f"{int(top_conf * 100)}% match · Demand {top_demand}/100 📈 · {crop_source}"
+        if top_action:
+            brain_subtitle += f" · {top_action}"
+        elif top_reasoning:
+            brain_subtitle += f" · {top_reasoning[:50]}"
         cards.append(
             UIInstruction(
                 card_type="recommendation",
                 title="🧠 AI Crop Brain",
                 value=top_crop,
-                subtitle=f"{int(top_conf * 100)}% match · KNN fusion of {len((live_context or {}).get('data_sources', ['satellite']))} data sources",
+                subtitle=brain_subtitle,
                 color="yellow",
             )
         )
@@ -354,13 +409,13 @@ def generate_guidance(
             f"Nutrients — N: {soil.get('nitrogen_kg_ha', 200)}, P: {soil.get('phosphorus_kg_ha', 15)}, "
             f"K: {soil.get('potassium_kg_ha', 220)} kg/ha. "
             f"Land status: {land}. "
-            f"KNN model recommends: {top_crops_str}. "
+            f"Gemini AI recommends (rising demand): {top_crops_str}. "
             f"{'Top pick: ' + crop_prediction[0]['crop'].capitalize() + ' — ' + (crop_prediction[0].get('market', {}).get('forecast', '')) if crop_prediction else ''}"
         ),
         "weather_analysis": (
             f"LIVE weather for {fused_data.region}: Temperature "
             f"{fused_data.temperature_avg_c}\u00b0C, rainfall {fused_data.rainfall_mm}mm, "
-            f"humidity {(live_context or {}).get('weather', {}).get('humidity', 55)}%. "
+            f"humidity {fused_data.humidity_pct}%. "
             f"Data sourced from {sources}. "
             f"Conditions are {'favorable' if fused_data.temperature_avg_c < 40 else 'hot - ensure irrigation'} "
             f"for the current growing season."

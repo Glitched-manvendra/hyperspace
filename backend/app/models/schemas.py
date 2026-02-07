@@ -26,6 +26,7 @@ class FusedDataSummary(BaseModel):
     lon: float = Field(default=78.6569, description="Query longitude")
     temperature_avg_c: float = Field(..., description="Average temperature (°C)")
     rainfall_mm: float = Field(..., description="Total rainfall (mm)")
+    humidity_pct: float = Field(default=55.0, description="Relative humidity (%)")
     soil_moisture_pct: float = Field(..., description="Soil moisture (%)")
     ndvi_avg: float = Field(..., description="Average NDVI (0-1)")
     data_sources: list[str] = Field(..., description="List of satellite sources used")

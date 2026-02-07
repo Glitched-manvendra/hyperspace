@@ -4,22 +4,26 @@ API Routes - Orbital Nexus
 Defines all HTTP endpoints. Keeps route logic thin;
 delegates to services and AI modules.
 
-Now powered by the real Orbital Fusion Engine:
+Powered by the Orbital Fusion Engine:
   - Open-Meteo (live weather)
   - ISRO Bhuvan (land classification)
-  - Soil Database (offline nutrients)
-  - CropEngine (KNN crop prediction)
-  - Market Trends (price intelligence)
+  - SISIndia / Soil Database (soil nutrients)
+  - Gemini AI (demand-driven crop prediction)
+  - Market Brain (mandi price intelligence)
 """
 
 from fastapi import APIRouter
 
 from app.models.schemas import UserQuery, QueryResponse
 from app.ai.intent import parse_intent, extract_location, extract_locations
-from app.ai.gemini_service import generate_ai_guidance, is_ai_available
+from app.ai.gemini_service import (
+    generate_ai_guidance,
+    generate_gemini_crop_recommendation,
+    is_ai_available,
+    _get_seasonal_fallback,
+)
 from app.services.fusion import get_fused_data, build_ui_instructions, generate_guidance
 from app.services.data_fusion import get_location_context
-from app.services.crop_engine import crop_engine
 from app.services.market_trends import get_market_info
 
 router = APIRouter(prefix="/api", tags=["query"])
@@ -32,8 +36,8 @@ async def process_query(payload: UserQuery) -> QueryResponse:
 
     Flow:
     1. Parse user intent from the query text
-    2. Fetch LIVE location context (Open-Meteo + Bhuvan + Soil DB)
-    3. Run CropEngine prediction using fused soil + weather data
+    2. Fetch LIVE location context (Open-Meteo + Bhuvan + Soil + Market Brain)
+    3. Get Gemini AI crop recommendation (rising-demand, profit-optimised)
     4. Build fused data summary from live context
     5. Generate guidance text and UI instructions
     6. Return structured response for the frontend
@@ -50,19 +54,29 @@ async def process_query(payload: UserQuery) -> QueryResponse:
     # Step 2: Fetch real data from fusion engine
     live_context = await get_location_context(lat, lon)
 
-    # Step 3: Run CropEngine with fused environmental data
+    # Step 3: Get crop recommendations (Gemini AI only — no local ML)
+    # Priority: Gemini AI (demand-driven) → Seasonal fallback
     weather = live_context["weather"]
     soil = live_context.get("soil", {})
+    region = live_context.get("region", "Unknown")
 
-    crop_prediction = crop_engine.predict(
-        n=soil.get("nitrogen_kg_ha", 80),
-        p=soil.get("phosphorus_kg_ha", 40),
-        k=soil.get("potassium_kg_ha", 40),
-        temperature=weather.get("temp", 28.0),
-        humidity=weather.get("humidity", 65.0),
-        ph=soil.get("ph", 6.5),
-        rainfall=weather.get("rain", 100.0),
+    # Get mandi snapshot from market brain for Gemini context
+    market_brain = live_context.get("market_brain", {})
+    mandi_snapshot = market_brain.get("snapshot") if market_brain else None
+
+    # 3a: Gemini AI — demand-driven, rising-demand crops only
+    gemini_crops = await generate_gemini_crop_recommendation(
+        region=region, soil=soil, weather=weather,
+        lat=lat, lon=lon, mandi_snapshot=mandi_snapshot,
     )
+
+    if gemini_crops:
+        crop_prediction = gemini_crops
+        live_context["crop_source"] = "Gemini AI (Rising Demand)"
+    else:
+        # 3b: Seasonal fallback (deterministic, no KNN)
+        crop_prediction = _get_seasonal_fallback(region, soil)
+        live_context["crop_source"] = "Seasonal Fallback"
 
     # Attach market data to each predicted crop
     for pred in crop_prediction:
@@ -80,6 +94,7 @@ async def process_query(payload: UserQuery) -> QueryResponse:
         live_weather=weather,
         region_name=live_context["region"],
         data_sources=live_context["data_sources"],
+        live_context=live_context,
     )
 
     # Step 5: Build dashboard card instructions for the frontend
@@ -131,15 +146,20 @@ async def process_multi_query(payload: UserQuery):
         weather = live_context["weather"]
         soil = live_context.get("soil", {})
 
-        crop_prediction = crop_engine.predict(
-            n=soil.get("nitrogen_kg_ha", 80),
-            p=soil.get("phosphorus_kg_ha", 40),
-            k=soil.get("potassium_kg_ha", 40),
-            temperature=weather.get("temp", 28.0),
-            humidity=weather.get("humidity", 65.0),
-            ph=soil.get("ph", 6.5),
-            rainfall=weather.get("rain", 100.0),
+        # Gemini AI (demand-driven) → seasonal fallback (no KNN)
+        market_brain = live_context.get("market_brain", {})
+        mandi_snapshot = market_brain.get("snapshot") if market_brain else None
+
+        gemini_crops = await generate_gemini_crop_recommendation(
+            region=name, soil=soil, weather=weather,
+            lat=lat, lon=lon, mandi_snapshot=mandi_snapshot,
         )
+        if gemini_crops:
+            crop_prediction = gemini_crops
+            live_context["crop_source"] = "Gemini AI (Rising Demand)"
+        else:
+            crop_prediction = _get_seasonal_fallback(name, soil)
+            live_context["crop_source"] = "Seasonal Fallback"
 
         for pred in crop_prediction:
             market = get_market_info(pred["crop"])
@@ -153,6 +173,7 @@ async def process_multi_query(payload: UserQuery):
             live_weather=weather,
             region_name=name,
             data_sources=live_context["data_sources"],
+            live_context=live_context,
         )
 
         ui_instructions = build_ui_instructions(intent, fused_data, live_context)
