@@ -15,7 +15,7 @@ Now powered by the real Orbital Fusion Engine:
 from fastapi import APIRouter
 
 from app.models.schemas import UserQuery, QueryResponse
-from app.ai.intent import parse_intent
+from app.ai.intent import parse_intent, extract_location
 from app.ai.gemini_service import generate_ai_guidance, is_ai_available
 from app.services.fusion import get_fused_data, build_ui_instructions, generate_guidance
 from app.services.data_fusion import get_location_context
@@ -42,8 +42,13 @@ async def process_query(payload: UserQuery) -> QueryResponse:
     # Step 1: Determine what the user is asking about
     intent = parse_intent(payload.query)
 
+    # Step 1b: Extract location from query text (overrides default coords)
+    extracted = extract_location(payload.query)
+    lat = extracted[0] if extracted else payload.lat
+    lon = extracted[1] if extracted else payload.lon
+
     # Step 2: Fetch real data from fusion engine
-    live_context = await get_location_context(payload.lat, payload.lon)
+    live_context = await get_location_context(lat, lon)
 
     # Step 3: Run CropEngine with fused environmental data
     weather = live_context["weather"]
@@ -70,8 +75,8 @@ async def process_query(payload: UserQuery) -> QueryResponse:
 
     # Step 4: Build fused data summary using live weather
     fused_data = get_fused_data(
-        payload.lat,
-        payload.lon,
+        lat,
+        lon,
         live_weather=weather,
         region_name=live_context["region"],
         data_sources=live_context["data_sources"],
@@ -82,8 +87,12 @@ async def process_query(payload: UserQuery) -> QueryResponse:
 
     # Step 6: Generate AI-powered guidance (Gemini) with template fallback
     fused_dict = fused_data.model_dump()
-    ai_text = await generate_ai_guidance(payload.query, intent, fused_dict, live_context)
-    guidance_text = ai_text or generate_guidance(intent, fused_data, payload.query, live_context)
+    ai_text = await generate_ai_guidance(
+        payload.query, intent, fused_dict, live_context
+    )
+    guidance_text = ai_text or generate_guidance(
+        intent, fused_data, payload.query, live_context
+    )
     ai_powered = ai_text is not None
 
     return QueryResponse(

@@ -41,7 +41,7 @@ export interface QueryResponse {
 }
 
 /** Backend API base URL — proxied through Vite in development */
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 /**
  * Send a natural language query to the backend.
@@ -54,9 +54,9 @@ const API_BASE = "/api";
 export async function queryBackend(
   query: string,
   lat = 28.4744,
-  lon = 77.504
+  lon = 77.504,
 ): Promise<QueryResponse> {
-  const res = await axios.post<QueryResponse>(`${API_BASE}/query`, {
+  const res = await axios.post<QueryResponse>(`${API_BASE}/api/query`, {
     query,
     lat,
     lon,

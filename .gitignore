@@ -1,3 +1,4 @@
+
 # Python
 __pycache__/
 *.py[cod]
@@ -6,12 +7,15 @@ dist/
 build/
 venv/
 .env
+.env.local
 
 # Node
 node_modules/
 .next/
 .cache/
 *.tsbuildinfo
+frontend/dist/
+frontend/.vercel/
 
 # Data artifacts
 data/processed/*.csv
@@ -28,13 +32,13 @@ data/processed/*.json
 # OS
 digest.txt
 hyperspace/
-
 .DS_Store
 Thumbs.db
+.kiro/
 
 # Logs
 *.log
-docs/
-deployment/
-
 npm-debug.log*
+
+# Deploy
+deployment/

@@ -34,6 +34,7 @@ def _get_client():
 
     try:
         from google import genai
+
         _client = genai.Client(api_key=api_key)
         logger.info("Gemini client initialized (model: %s)", _model_id)
         return _client
@@ -75,8 +76,11 @@ def _build_context_prompt(
     if crop_prediction:
         crops_str = "\n".join(
             f"  {i+1}. {p['crop'].capitalize()} — {int(p['confidence']*100)}% match"
-            + (f" | MSP ₹{p['market']['msp']:,}/qtl, Range ₹{p['market']['price_min']:,}-{p['market']['price_max']:,}/qtl"
-               if p.get("market") else "")
+            + (
+                f" | MSP ₹{p['market']['msp']:,}/qtl, Range ₹{p['market']['price_min']:,}-{p['market']['price_max']:,}/qtl"
+                if p.get("market")
+                else ""
+            )
             for i, p in enumerate(crop_prediction[:5])
         )
 
