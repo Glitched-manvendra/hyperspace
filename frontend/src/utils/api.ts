@@ -41,7 +41,7 @@ export interface QueryResponse {
 }
 
 /** Backend API base URL — proxied through Vite in development */
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 /**
  * Send a natural language query to the backend.
