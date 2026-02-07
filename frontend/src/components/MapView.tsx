@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 
 // Fix default marker icon issue with bundlers
@@ -14,19 +15,39 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-/** Greater Noida coordinates — default map center */
-const GREATER_NOIDA: [number, number] = [28.4744, 77.504];
+/** Default center — Greater Noida */
+const DEFAULT_CENTER: [number, number] = [28.4744, 77.504];
 
 /**
- * MapView — Leaflet map centered on Greater Noida
+ * MapController — flies the map camera to new coordinates
+ */
+function MapController({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, 12, { duration: 2 });
+  }, [center, map]);
+  return null;
+}
+
+interface MapViewProps {
+  lat?: number;
+  lon?: number;
+  regionName?: string;
+}
+
+/**
+ * MapView — Leaflet map with dynamic flyTo
  *
  * Shows the target region for satellite data fusion.
- * Future: will render data overlays (NDVI heatmaps, flood risk zones, etc.)
+ * When new coordinates arrive, smoothly flies the camera to the location.
  */
-function MapView() {
+function MapView({ lat, lon, regionName }: MapViewProps) {
+  const position: [number, number] = [lat ?? DEFAULT_CENTER[0], lon ?? DEFAULT_CENTER[1]];
+  const label = regionName ?? "Greater Noida";
+
   return (
     <MapContainer
-      center={GREATER_NOIDA}
+      center={DEFAULT_CENTER}
       zoom={11}
       className="w-full h-full"
       zoomControl={false}
@@ -35,14 +56,15 @@ function MapView() {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker position={GREATER_NOIDA}>
+      <MapController center={position} />
+      <Marker position={position}>
         <Popup>
-          <strong>Greater Noida</strong>
+          <strong>{label}</strong>
           <br />
-          28.4744°N, 77.504°E
+          {position[0].toFixed(4)}°N, {position[1].toFixed(4)}°E
           <br />
           <span className="text-xs text-gray-500">
-            Default analysis region
+            Satellite analysis target
           </span>
         </Popup>
       </Marker>

@@ -66,12 +66,12 @@ export function PriceTrendChart({ title, subtitle, data }: PriceTrendProps) {
   const unit: string = data?.unit ?? "₹/qtl";
 
   return (
-    <div className="rounded-xl bg-gray-800/50 border border-white/[0.06] p-4">
-      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-0.5">
+    <div className="neo-box p-4 bg-surface">
+      <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
         {title}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+        <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
       )}
 
       <div className="h-36 w-full">
@@ -79,21 +79,22 @@ export function PriceTrendChart({ title, subtitle, data }: PriceTrendProps) {
           <LineChart data={points}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10, fill: "#6b7280" }}
+              tick={{ fontSize: 10, fill: "var(--text-primary)", opacity: 0.7 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis hide />
             <Tooltip
               contentStyle={{
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: "8px",
+                background: "var(--bg-secondary)",
+                border: "2px solid var(--border-color)",
+                borderRadius: "0px",
+                boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
                 fontSize: "12px",
-                color: "#e5e7eb",
+                color: "var(--text-primary)",
               }}
               formatter={(v: number | undefined) => [`${v ?? 0} ${unit}`, "Price"]}
-              labelStyle={{ color: "#9ca3af" }}
+              labelStyle={{ color: "var(--text-primary)" }}
             />
             <Line
               type="monotone"
@@ -136,12 +137,12 @@ export function SoilCompositionChart({
   ];
 
   return (
-    <div className="rounded-xl bg-gray-800/50 border border-white/[0.06] p-4">
-      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-0.5">
+    <div className="neo-box p-4 bg-surface">
+      <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
         {title}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+        <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
       )}
 
       <div className="h-36 w-full">
@@ -167,11 +168,12 @@ export function SoilCompositionChart({
             </Pie>
             <Tooltip
               contentStyle={{
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: "8px",
+                background: "var(--bg-secondary)",
+                border: "2px solid var(--border-color)",
+                borderRadius: "0px",
+                boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
                 fontSize: "12px",
-                color: "#e5e7eb",
+                color: "var(--text-primary)",
               }}
               formatter={(v: number | undefined, name: string | undefined) => [`${v ?? 0}%`, name ?? ""]}
             />
@@ -182,7 +184,7 @@ export function SoilCompositionChart({
       {/* Legend */}
       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
         {segments.map((s, idx) => (
-          <span key={s.name} className="flex items-center gap-1 text-[10px] text-gray-400">
+          <span key={s.name} className="flex items-center gap-1 text-[10px] text-text/70 font-mono">
             <span
               className="w-2 h-2 rounded-full inline-block"
               style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
@@ -215,9 +217,9 @@ interface CropItem {
 }
 
 function confidenceColor(c: number): string {
-  if (c >= 0.8) return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-  if (c >= 0.5) return "bg-amber-500/20 text-amber-400 border-amber-500/30";
-  return "bg-red-500/20 text-red-400 border-red-500/30";
+  if (c >= 0.8) return "bg-emerald-100 text-emerald-800 border-emerald-800";
+  if (c >= 0.5) return "bg-amber-100 text-amber-800 border-amber-800";
+  return "bg-rose-100 text-rose-800 border-rose-800";
 }
 
 export function RecommendationList({
@@ -232,31 +234,31 @@ export function RecommendationList({
   ];
 
   return (
-    <div className="rounded-xl bg-gray-800/50 border border-white/[0.06] p-4">
-      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-0.5">
+    <div className="neo-box p-4 bg-surface">
+      <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
         {title}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+        <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
       )}
 
       <div className="space-y-2">
         {items.map((item) => (
           <div
             key={item.name}
-            className="flex items-center justify-between bg-gray-900/50 rounded-lg px-3 py-2.5 border border-white/[0.04] hover:border-white/[0.08] transition-colors"
+            className="flex items-center justify-between bg-bg border-2 border-transparent hover:border-border hover:shadow-neo-sm transition-all rounded-sm px-3 py-2.5"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-200 truncate">
+              <p className="text-sm font-bold text-text truncate">
                 🌾 {item.name}
               </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
+              <p className="text-[10px] text-text/60 mt-0.5 font-mono">
                 {item.season} season
                 {item.reasoning && ` · ${item.reasoning}`}
               </p>
             </div>
             <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${confidenceColor(item.confidence)}`}
+              className={`text-[10px] font-bold px-2 py-0.5 border-2 shadow-sm ${confidenceColor(item.confidence)}`}
             >
               {Math.round(item.confidence * 100)}%
             </span>
@@ -292,12 +294,12 @@ export function CropFactorsChart({
     ];
 
   return (
-    <div className="rounded-xl bg-gray-800/50 border border-white/[0.06] p-4">
-      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-0.5">
+    <div className="neo-box p-4 bg-surface">
+      <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
         {title}
       </p>
       {subtitle && (
-        <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+        <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
       )}
 
       <div className="h-40 w-full">
@@ -309,25 +311,26 @@ export function CropFactorsChart({
           >
             <XAxis
               type="number"
-              tick={{ fontSize: 10, fill: "#6b7280" }}
+              tick={{ fontSize: 10, fill: "var(--text-primary)", opacity: 0.7 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               type="category"
               dataKey="name"
-              tick={{ fontSize: 10, fill: "#9ca3af" }}
+              tick={{ fontSize: 10, fill: "var(--text-primary)", opacity: 0.7 }}
               axisLine={false}
               tickLine={false}
               width={75}
             />
             <Tooltip
               contentStyle={{
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: "8px",
+                background: "var(--bg-secondary)",
+                border: "2px solid var(--border-color)",
+                borderRadius: "0px",
+                boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
                 fontSize: "12px",
-                color: "#e5e7eb",
+                color: "var(--text-primary)",
               }}
               formatter={(v: number | undefined, name: string | undefined) => [
                 `${v ?? 0} kg/ha`,
@@ -336,7 +339,7 @@ export function CropFactorsChart({
             />
             <Legend
               iconSize={8}
-              wrapperStyle={{ fontSize: "10px", color: "#9ca3af" }}
+              wrapperStyle={{ fontSize: "10px", color: "var(--text-primary)" }}
               formatter={(value: string) =>
                 value === "actual" ? "Your Soil" : "Optimal"
               }

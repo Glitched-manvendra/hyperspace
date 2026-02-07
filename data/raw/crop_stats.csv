@@ -1,0 +1,52 @@
+date,state,district,crop,area_hectares,yield_tonnes_per_hectare,production_tonnes
+2023,Uttar Pradesh,Gautam Buddha Nagar,Rice,45200,3.85,174020
+2023,Uttar Pradesh,Gautam Buddha Nagar,Wheat,52800,4.12,217536
+2023,Uttar Pradesh,Gautam Buddha Nagar,Sugarcane,18500,72.5,1341250
+2023,Uttar Pradesh,Gautam Buddha Nagar,Maize,8200,2.95,24190
+2023,Uttar Pradesh,Gautam Buddha Nagar,Potato,6800,22.5,153000
+2023,Uttar Pradesh,Gautam Buddha Nagar,Mustard,12500,1.45,18125
+2024,Uttar Pradesh,Gautam Buddha Nagar,Rice,46800,3.92,183456
+2024,Uttar Pradesh,Gautam Buddha Nagar,Wheat,54200,4.25,230350
+2024,Uttar Pradesh,Gautam Buddha Nagar,Sugarcane,19200,74.8,1436160
+2024,Uttar Pradesh,Gautam Buddha Nagar,Maize,8800,3.05,26840
+2024,Uttar Pradesh,Lucknow,Rice,38500,3.62,139370
+2024,Uttar Pradesh,Lucknow,Wheat,48200,3.95,190390
+2024,Uttar Pradesh,Lucknow,Sugarcane,22800,68.2,1554960
+2023,Bihar,Patna,Rice,52800,2.85,150480
+2023,Bihar,Patna,Wheat,35200,3.15,110880
+2023,Bihar,Patna,Maize,18500,3.42,63270
+2024,Bihar,Patna,Rice,54500,2.92,159140
+2024,Bihar,Patna,Wheat,36800,3.28,120704
+2023,Rajasthan,Jaipur,Wheat,42500,3.25,138125
+2023,Rajasthan,Jaipur,Mustard,28500,1.35,38475
+2023,Rajasthan,Jaipur,Bajra,22800,1.85,42180
+2024,Rajasthan,Jaipur,Wheat,44200,3.38,149396
+2024,Rajasthan,Jaipur,Mustard,29800,1.42,42316
+2023,Madhya Pradesh,Bhopal,Soybean,85200,1.45,123540
+2023,Madhya Pradesh,Bhopal,Wheat,62500,3.52,220000
+2023,Madhya Pradesh,Bhopal,Gram,32800,1.12,36736
+2024,Madhya Pradesh,Bhopal,Soybean,88500,1.52,134520
+2024,Madhya Pradesh,Bhopal,Wheat,65200,3.65,237980
+2023,Maharashtra,Nagpur,Cotton,42500,0.52,22100
+2023,Maharashtra,Nagpur,Soybean,35200,1.38,48576
+2023,Maharashtra,Nagpur,Orange,18500,8.5,157250
+2024,Maharashtra,Nagpur,Cotton,44200,0.55,24310
+2024,Maharashtra,Nagpur,Soybean,36800,1.45,53360
+2023,Karnataka,Dharwad,Cotton,38500,0.58,22330
+2023,Karnataka,Dharwad,Jowar,25200,1.25,31500
+2023,Karnataka,Dharwad,Groundnut,18800,1.82,34216
+2024,Karnataka,Dharwad,Cotton,40200,0.62,24924
+2024,Karnataka,Dharwad,Jowar,26500,1.32,34980
+2023,Tamil Nadu,Coimbatore,Rice,28500,3.85,109725
+2023,Tamil Nadu,Coimbatore,Coconut,22800,8500,193800000
+2023,Tamil Nadu,Coimbatore,Cotton,15200,0.72,10944
+2024,Tamil Nadu,Coimbatore,Rice,29800,3.92,116816
+2024,Tamil Nadu,Coimbatore,Coconut,23500,8800,206800000
+2023,Punjab,Ludhiana,Wheat,125000,5.12,640000
+2023,Punjab,Ludhiana,Rice,118000,4.25,501500
+2024,Punjab,Ludhiana,Wheat,128000,5.25,672000
+2024,Punjab,Ludhiana,Rice,120000,4.32,518400
+2023,Andhra Pradesh,Guntur,Rice,85200,3.52,299904
+2023,Andhra Pradesh,Guntur,Cotton,42500,0.65,27625
+2024,Andhra Pradesh,Guntur,Rice,88500,3.65,322925
+2024,Andhra Pradesh,Guntur,Cotton,44200,0.68,30056

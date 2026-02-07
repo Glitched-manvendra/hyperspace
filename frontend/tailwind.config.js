@@ -1,20 +1,23 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: "class", // Enable class-based dark mode
   theme: {
     extend: {
       colors: {
-        // Space-Agri Palette
-        background: "#0a0e1a",
-        surface: "#111827",
-        primary: "#10b981",
-        accent: "#06b6d4",
-        gold: "#f59e0b",
-        sage: "#9ca3af",
-        // Glass specific
-        glass: "rgba(17, 24, 39, 0.7)",
+        // Neo-Brutalism Palette
+        bg: "var(--bg-primary)",
+        surface: "var(--bg-secondary)",
+        text: "var(--text-primary)",
+        border: "var(--border-color)",
+
+        // Brand Colors
+        primary: "#88cc00", // Acid Green
+        secondary: "#ff00ff", // Magenta
+        accent: "#06b6d4", // Cyan
+
+        // Legacy aliases (mapped to new system where possible or kept for compatibility)
         "glass-border": "rgba(255, 255, 255, 0.08)",
-        // Legacy aliases
         nexus: {
           dark: "#0a0e1a",
           panel: "#111827",
@@ -22,24 +25,18 @@ export default {
           glow: "#60a5fa",
         },
       },
+      boxShadow: {
+        neo: "4px 4px 0px 0px rgba(0,0,0,1)",
+        "neo-sm": "2px 2px 0px 0px rgba(0,0,0,1)",
+        "neo-lg": "8px 8px 0px 0px rgba(0,0,0,1)",
+      },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Outfit", "Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-        display: ["Space Grotesk", "Inter", "sans-serif"],
+        display: ["Space Grotesk", "Outfit", "sans-serif"],
       },
       backgroundImage: {
-        "space-gradient": "radial-gradient(circle at center, #1e293b 0%, #0a0e1a 100%)",
-        "glow-green": "conic-gradient(from 180deg at 50% 50%, #10b981 0deg, #06b6d4 180deg, #10b981 360deg)",
-      },
-      animation: {
-        "spin-slow": "spin 12s linear infinite",
-        "pulse-glow": "pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-      },
-      keyframes: {
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1", boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)" },
-          "50%": { opacity: ".7", boxShadow: "0 0 10px rgba(16, 185, 129, 0.1)" },
-        },
+        "space-gradient": "radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-primary) 100%)",
       },
     },
   },

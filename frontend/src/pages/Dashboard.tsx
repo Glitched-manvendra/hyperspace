@@ -5,9 +5,12 @@ import MapView from "../components/MapView";
 import PromptBar from "../components/PromptBar";
 import SatelliteLoader from "../components/SatelliteLoader";
 import { queryBackend, type QueryResponse } from "../utils/api";
+import type { User } from "../utils/auth";
 
 interface DashboardProps {
   onBack: () => void;
+  user?: User | null;
+  onLogout?: () => void;
 }
 
 /**
@@ -16,7 +19,7 @@ interface DashboardProps {
  * Glass aesthetic over a satellite map.
  * Sidebar streams generative widgets from the Orbital Fusion backend.
  */
-export default function Dashboard({ onBack }: DashboardProps) {
+export default function Dashboard({ onBack, user, onLogout }: DashboardProps) {
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +39,12 @@ export default function Dashboard({ onBack }: DashboardProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-bg text-text">
       {/* Satellite loading overlay */}
       {loading && <SatelliteLoader />}
 
       {/* Top header — glass style, with back button */}
-      <Header onBack={onBack} />
+      <Header onBack={onBack} user={user} onLogout={onLogout} />
 
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
@@ -50,15 +53,26 @@ export default function Dashboard({ onBack }: DashboardProps) {
 
         {/* Center — map + overlays */}
         <main className="flex-1 relative">
-          <MapView />
+          <MapView
+            lat={response?.fused_data.lat}
+            lon={response?.fused_data.lon}
+            regionName={response?.fused_data.region}
+          />
 
-          {/* Guidance text overlay — glass panel */}
+          {/* Guidance text overlay */}
           {response && (
-            <div className="absolute top-4 right-4 max-w-md glass-panel rounded-xl p-4 shadow-xl z-[1000] border border-glass-border">
-              <p className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">
-                {response.intent.replace("_", " ")}
-              </p>
-              <p className="text-sm text-gray-300 leading-relaxed">
+            <div className="absolute top-4 right-4 max-w-md glass-card rounded-xl p-4 z-[1000]">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-xs text-primary font-semibold uppercase tracking-wider">
+                  {response.intent.replace("_", " ")}
+                </p>
+                {response.ai_powered && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 rounded-full text-primary">
+                    ✦ Gemini AI
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-sage leading-relaxed whitespace-pre-line">
                 {response.guidance_text}
               </p>
             </div>
@@ -66,8 +80,8 @@ export default function Dashboard({ onBack }: DashboardProps) {
 
           {/* Error banner */}
           {error && (
-            <div className="absolute top-4 right-4 max-w-md bg-red-900/70 backdrop-blur-md border border-red-500/30 rounded-xl p-4 z-[1000]">
-              <p className="text-sm text-red-200">{error}</p>
+            <div className="absolute top-4 right-4 max-w-md bg-red-100 border-2 border-red-900 shadow-neo p-4 z-[1000]">
+              <p className="text-sm text-red-900 font-bold">{error}</p>
             </div>
           )}
         </main>

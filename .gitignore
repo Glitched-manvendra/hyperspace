@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.env
+
+# Node
+node_modules/
+.next/
+.cache/
+*.tsbuildinfo
+
+# Data artifacts
+data/processed/*.csv
+data/processed/*.json
+!data/processed/.gitkeep
+!data/raw/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+digest.txt
+hyperspace/
+
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+docs/
+deployment/
+
+npm-debug.log*

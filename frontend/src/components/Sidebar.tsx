@@ -82,10 +82,10 @@ function Sidebar({ response, loading }: SidebarProps) {
   const cards = response?.ui_instructions ?? placeholderCards;
 
   return (
-    <aside className="w-80 glass-panel border-r border-glass-border flex flex-col">
+    <aside className="w-80 bg-surface border-r-2 border-border flex flex-col z-20 shadow-neo">
       {/* Section title */}
-      <div className="px-4 py-3 border-b border-glass-border">
-        <h2 className="text-xs font-display font-semibold text-sage uppercase tracking-wider">
+      <div className="px-4 py-3 border-b-2 border-border">
+        <h2 className="text-xs font-display font-bold text-text/70 uppercase tracking-widest">
           Dashboard
         </h2>
         {response && (
@@ -101,7 +101,7 @@ function Sidebar({ response, loading }: SidebarProps) {
           Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 bg-white/5 rounded-xl animate-pulse"
+              className="h-24 bg-black/5 dark:bg-white/5 border-2 border-dashed border-text/20 rounded-none animate-pulse"
             />
           ))
         ) : (

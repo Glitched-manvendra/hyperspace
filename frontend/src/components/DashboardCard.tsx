@@ -6,15 +6,15 @@ interface DashboardCardProps {
   color: string;
 }
 
-/** Color map for card accent borders and icons (Space-Glass) */
-const colorMap: Record<string, { border: string; text: string; glow: string }> = {
-  blue:    { border: "border-blue-500/40",    text: "text-blue-400",    glow: "shadow-blue-500/10" },
-  orange:  { border: "border-orange-500/40",  text: "text-orange-400",  glow: "shadow-orange-500/10" },
-  green:   { border: "border-primary/40",     text: "text-primary",     glow: "shadow-primary/10" },
-  emerald: { border: "border-primary/40",     text: "text-primary",     glow: "shadow-primary/10" },
-  yellow:  { border: "border-gold/40",        text: "text-gold",        glow: "shadow-gold/10" },
-  red:     { border: "border-red-500/40",     text: "text-red-400",     glow: "shadow-red-500/10" },
-  gray:    { border: "border-white/10",       text: "text-sage",        glow: "" },
+/** Color map for card accents (Neo-Brutalist) */
+const colorMap: Record<string, { border: string; text: string; bg: string }> = {
+  blue:    { border: "border-blue-500",    text: "text-blue-600 dark:text-blue-400",    bg: "bg-blue-50 dark:bg-blue-900/20" },
+  orange:  { border: "border-orange-500",  text: "text-orange-600 dark:text-orange-400",  bg: "bg-orange-50 dark:bg-orange-900/20" },
+  green:   { border: "border-primary",     text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  emerald: { border: "border-primary",     text: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+  yellow:  { border: "border-yellow-500",  text: "text-yellow-700 dark:text-yellow-400",   bg: "bg-yellow-50 dark:bg-yellow-900/20" },
+  red:     { border: "border-red-500",     text: "text-red-700 dark:text-red-400",     bg: "bg-red-50 dark:bg-red-900/20" },
+  gray:    { border: "border-text",        text: "text-text",        bg: "bg-surface" },
 };
 
 /** Icon map by card type */
@@ -26,31 +26,31 @@ const iconMap: Record<string, string> = {
 };
 
 /**
- * DashboardCard — single stat card in the sidebar (Space-Glass)
+ * DashboardCard — single stat card in the sidebar (Neo-Brutalist)
  *
  * Rendered dynamically via UIInstruction from the backend.
  */
 function DashboardCard({ cardType, title, value, subtitle, color }: DashboardCardProps) {
-  const scheme = colorMap[color] ?? colorMap.blue;
+  const scheme = colorMap[color] ?? colorMap.gray;
   const icon = iconMap[cardType] ?? "📋";
 
   return (
     <div
-      className={`glass-card rounded-xl border-l-4 p-4 hover:bg-white/[0.06] transition-colors ${scheme.border} ${scheme.glow}`}
+      className={`neo-box p-4 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-neo-sm transition-all ${scheme.bg} ${scheme.border}`}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-[11px] text-sage uppercase tracking-wider font-medium">
+          <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold">
             {title}
           </p>
-          <p className={`text-2xl font-display font-bold mt-1 ${scheme.text}`}>
+          <p className="text-2xl font-display font-bold mt-1 text-text">
             {value}
           </p>
           {subtitle && (
-            <p className="text-[11px] text-sage/70 mt-1">{subtitle}</p>
+            <p className="text-[11px] text-text/70 mt-1 font-mono">{subtitle}</p>
           )}
         </div>
-        <span className="text-lg">{icon}</span>
+        <span className="text-xl filter drop-shadow-sm">{icon}</span>
       </div>
     </div>
   );

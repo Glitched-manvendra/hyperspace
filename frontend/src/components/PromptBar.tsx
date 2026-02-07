@@ -23,7 +23,7 @@ function PromptBar({ onSubmit, loading }: PromptBarProps) {
   };
 
   return (
-    <div className="glass-panel border-t border-glass-border">
+    <div className="bg-surface border-t-2 border-border z-20 shadow-neo">
       {/* Progress bar */}
       {loading && (
         <div className="h-0.5 bg-white/5">
@@ -37,13 +37,13 @@ function PromptBar({ onSubmit, loading }: PromptBarProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask about satellite data... (e.g., 'What crop should I grow in Greater Noida?')"
-          className="flex-1 bg-white/5 border border-glass-border rounded-xl px-4 py-3 text-sm text-white placeholder-sage/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors"
+          className="flex-1 neo-input"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="bg-primary hover:bg-emerald-600 disabled:bg-white/10 disabled:text-sage/50 text-white font-medium px-5 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
+          className="neo-button bg-primary text-black font-bold px-6 py-3 text-sm disabled:opacity-50 disabled:shadow-none flex items-center gap-2"
         >
           {loading ? (
             <>

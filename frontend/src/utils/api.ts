@@ -15,6 +15,8 @@ export interface UIInstruction {
 /** Fused satellite data summary */
 export interface FusedDataSummary {
   region: string;
+  lat: number;
+  lon: number;
   temperature_avg_c: number;
   rainfall_mm: number;
   soil_moisture_pct: number;
@@ -28,6 +30,7 @@ export interface QueryResponse {
   query_echo: string;
   fused_data: FusedDataSummary;
   guidance_text: string;
+  ai_powered: boolean;
   recommendations: Array<{
     crop_name: string;
     confidence: number;
