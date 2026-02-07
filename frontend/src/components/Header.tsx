@@ -1,4 +1,5 @@
 import { ArrowLeft, Satellite, LogOut, User } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   onBack?: () => void;
@@ -14,6 +15,7 @@ function Header({ onBack, user, onLogout }: HeaderProps) {
     <header className="flex items-center justify-between px-6 py-3 bg-surface border-b-2 border-border">
       {/* Logo + title */}
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         {onBack && (
           <button
             onClick={onBack}
@@ -24,7 +26,11 @@ function Header({ onBack, user, onLogout }: HeaderProps) {
           </button>
         )}
         <div className="w-10 h-10 border-2 border-border shadow-neo-sm overflow-hidden bg-white">
-          <img src="/logo.png" alt="Orbital Nexus" className="w-full h-full object-contain p-1" />
+          <img
+            src="/logo.png"
+            alt="Orbital Nexus"
+            className="w-full h-full object-contain p-1"
+          />
         </div>
         <div>
           <h1 className="text-lg font-display font-bold text-text tracking-tight leading-none">

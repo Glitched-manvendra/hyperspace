@@ -4,7 +4,6 @@ import Dashboard from "./pages/Dashboard";
 import AuthPage from "./pages/AuthPage";
 import { getStoredUser, logout, type User } from "./utils/auth";
 import { ThemeProvider } from "./context/ThemeContext";
-import { ThemeToggle } from "./components/ThemeToggle";
 
 /**
  * Orbital Nexus — Root Application
@@ -47,7 +46,6 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ThemeToggle />
       {view === "landing" && <LandingPage onLaunch={handleLaunch} />}
       {view === "auth" && <AuthPage onAuth={handleAuth} />}
       {view === "dashboard" && (
