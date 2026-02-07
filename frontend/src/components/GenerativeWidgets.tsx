@@ -21,6 +21,9 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
+  Legend,
 } from "recharts";
 
 /* ─── colour palette ─── */
@@ -259,6 +262,121 @@ export function RecommendationList({
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CROP FACTORS — Bar Chart (N-P-K actual vs optimal)
+   card_type: "chart_bar"
+   Expected data shape:
+     data: { factors: [{name, actual, optimal}] }
+   ═══════════════════════════════════════════════════════════════════ */
+interface CropFactorsProps {
+  title: string;
+  subtitle?: string;
+  data?: WidgetData;
+}
+
+export function CropFactorsChart({
+  title,
+  subtitle,
+  data,
+}: CropFactorsProps) {
+  const factors: { name: string; actual: number; optimal: number }[] =
+    data?.factors ?? [
+      { name: "Nitrogen", actual: 200, optimal: 80 },
+      { name: "Phosphorus", actual: 42, optimal: 45 },
+      { name: "Potassium", actual: 220, optimal: 40 },
+    ];
+
+  return (
+    <div className="rounded-xl bg-gray-800/50 border border-white/[0.06] p-4">
+      <p className="text-[11px] text-gray-400 uppercase tracking-wider font-medium mb-0.5">
+        {title}
+      </p>
+      {subtitle && (
+        <p className="text-[10px] text-gray-500 mb-3">{subtitle}</p>
+      )}
+
+      <div className="h-40 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={factors}
+            layout="vertical"
+            margin={{ top: 4, right: 12, bottom: 4, left: 8 }}
+          >
+            <XAxis
+              type="number"
+              tick={{ fontSize: 10, fill: "#6b7280" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="name"
+              tick={{ fontSize: 10, fill: "#9ca3af" }}
+              axisLine={false}
+              tickLine={false}
+              width={75}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "#1f2937",
+                border: "1px solid #374151",
+                borderRadius: "8px",
+                fontSize: "12px",
+                color: "#e5e7eb",
+              }}
+              formatter={(v: number | undefined, name: string | undefined) => [
+                `${v ?? 0} kg/ha`,
+                name === "actual" ? "Your Soil" : "Optimal",
+              ]}
+            />
+            <Legend
+              iconSize={8}
+              wrapperStyle={{ fontSize: "10px", color: "#9ca3af" }}
+              formatter={(value: string) =>
+                value === "actual" ? "Your Soil" : "Optimal"
+              }
+            />
+            <Bar
+              dataKey="actual"
+              fill={EMERALD}
+              radius={[0, 4, 4, 0]}
+              barSize={10}
+              opacity={0.9}
+            />
+            <Bar
+              dataKey="optimal"
+              fill={AMBER}
+              radius={[0, 4, 4, 0]}
+              barSize={10}
+              opacity={0.6}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Deficit / surplus indicators */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+        {factors.map((f) => {
+          const diff = f.actual - f.optimal;
+          const pct = f.optimal > 0 ? Math.round((diff / f.optimal) * 100) : 0;
+          const isDeficit = diff < 0;
+          return (
+            <span
+              key={f.name}
+              className={`text-[10px] font-medium ${
+                isDeficit ? "text-rose-400" : "text-emerald-400"
+              }`}
+            >
+              {f.name.slice(0, 1)}:{" "}
+              {isDeficit ? `${pct}%` : `+${pct}%`}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

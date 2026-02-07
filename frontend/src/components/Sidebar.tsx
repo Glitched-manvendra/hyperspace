@@ -5,6 +5,7 @@ import {
   PriceTrendChart,
   SoilCompositionChart,
   RecommendationList,
+  CropFactorsChart,
 } from "./GenerativeWidgets";
 
 interface SidebarProps {
@@ -31,6 +32,14 @@ function WidgetFactory({ card }: { card: UIInstruction }) {
     case "chart_pie":
       return (
         <SoilCompositionChart
+          title={card.title}
+          subtitle={card.subtitle}
+          data={card.data}
+        />
+      );
+    case "chart_bar":
+      return (
+        <CropFactorsChart
           title={card.title}
           subtitle={card.subtitle}
           data={card.data}
