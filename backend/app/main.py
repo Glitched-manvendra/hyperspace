@@ -53,6 +53,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://orbitalnexus.online",
         "http://orbitalnexus.online",
+        "https://orbital-nexus.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

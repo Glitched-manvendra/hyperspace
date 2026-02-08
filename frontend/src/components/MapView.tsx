@@ -323,7 +323,6 @@ function MapView({
     lat ?? clickedPos?.[0] ?? DEFAULT_CENTER[0],
     lon ?? clickedPos?.[1] ?? DEFAULT_CENTER[1],
   ];
-  const _activeLabel = regionName ?? clickedName ?? "India";
 
   /** Handle a map click */
   const handleMapClick = useCallback(
