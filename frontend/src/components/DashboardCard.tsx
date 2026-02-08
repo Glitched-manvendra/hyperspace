@@ -24,7 +24,7 @@ const colorMap: Record<string, { border: string; text: string; bg: string }> = {
  *
  * Rendered dynamically via UIInstruction from the backend.
  */
-function DashboardCard({ cardType, title, value, subtitle, color }: DashboardCardProps) {
+function DashboardCard({ cardType: _cardType, title, value, subtitle, color }: DashboardCardProps) {
   const scheme = colorMap[color] ?? colorMap.gray;
 
   return (

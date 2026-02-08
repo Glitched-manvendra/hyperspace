@@ -121,7 +121,7 @@ export default function CropRecommendationCard({
             Other Locations
           </h3>
           <div className="grid grid-cols-1 gap-2">
-            {multiResponses.map((r, i) => (
+            {multiResponses.map((r, _i) => (
               <button
                 key={`${r.fused_data.lat}-${r.fused_data.lon}`}
                 onClick={() => onSelectLocation?.(r)}
