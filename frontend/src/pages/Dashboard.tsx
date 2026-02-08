@@ -143,45 +143,48 @@ export default function Dashboard({ onBack, user, onLogout }: DashboardProps) {
 
           {/* Guidance text overlay */}
           {response && (
-            <div className="absolute top-4 right-4 max-w-md glass-card rounded-xl p-4 z-[1000] max-h-[60vh] overflow-y-auto">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs text-primary font-semibold uppercase tracking-wider">
-                  {response.intent.replace("_", " ")}
-                </p>
+            <div className="absolute top-4 right-4 max-w-sm bg-black/20 backdrop-blur-md rounded-xl p-4 z-[1000] max-h-[70vh] overflow-y-auto shadow-lg border border-white/20">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
+                <div>
+                  <p className="text-xs font-bold text-white uppercase tracking-wide">
+                    {response.intent.replace("_", " ")}
+                  </p>
+                  <p className="text-[10px] text-white/80 mt-0.5">
+                    📍 {response.fused_data.region}
+                  </p>
+                </div>
                 {response.ai_powered && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 rounded-full text-primary">
-                    ✦ Gemini AI
-                  </span>
-                )}
-                {multiResponses.length > 1 && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-accent/20 border border-accent/30 rounded-full text-accent">
-                    {multiResponses.length} locations
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-green-500/30 border border-green-400/50 rounded-md text-white">
+                    ✦ AI
                   </span>
                 )}
               </div>
 
-              {/* Multi-location: show tabs for each location */}
+              {/* Multi-location selector */}
               {multiResponses.length > 1 ? (
-                <div className="space-y-3">
-                  {multiResponses.map((r, i) => (
-                    <div
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold text-white/90 uppercase tracking-wide mb-2">
+                    Locations ({multiResponses.length}):
+                  </p>
+                  {multiResponses.map((r) => (
+                    <button
                       key={`${r.fused_data.lat}-${r.fused_data.lon}`}
-                      className="p-2.5 rounded-lg border border-border/50 cursor-pointer hover:bg-primary/5 transition-colors"
+                      className="w-full p-2 rounded-lg border border-white/20 hover:border-green-400/50 hover:bg-white/10 transition-all text-left"
                       onClick={() => setResponse(r)}
                     >
-                      <p className="text-xs font-bold text-primary mb-1">
+                      <p className="text-xs font-bold text-white">
                         📍 {r.fused_data.region}
                       </p>
-                      <p className="text-xs text-sage leading-relaxed line-clamp-3">
-                        {r.guidance_text.slice(0, 200)}…
-                      </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-sage leading-relaxed whitespace-pre-line">
-                  {response.guidance_text}
-                </p>
+                <div>
+                  <p className="text-sm text-white leading-relaxed whitespace-pre-line line-clamp-6">
+                    {response.guidance_text}
+                  </p>
+                </div>
               )}
             </div>
           )}
