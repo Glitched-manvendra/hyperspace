@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import MapView from "../components/MapView";
@@ -26,6 +26,49 @@ export default function Dashboard({ onBack, user, onLogout }: DashboardProps) {
   const [extraMarkers, setExtraMarkers] = useState<{ lat: number; lon: number; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Resize State
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+
+  /** Handle resize start */
+  const startResizing = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  /** Handle resize stop */
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  /** Handle mouse move during resize */
+  const resizeHandler = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = e.clientX;
+        // Constraints: 240px to 600px
+        if (newWidth >= 240 && newWidth <= 600) {
+          setSidebarWidth(newWidth);
+        }
+      }
+    },
+    [isResizing]
+  );
+
+  // Attach/Detach event listeners for smooth resizing outside the handle
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", resizeHandler);
+      window.addEventListener("mouseup", stopResizing);
+    } else {
+      window.removeEventListener("mousemove", resizeHandler);
+      window.removeEventListener("mouseup", stopResizing);
+    }
+    return () => {
+      window.removeEventListener("mousemove", resizeHandler);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizing, resizeHandler, stopResizing]);
 
   /** Run a natural-language query (from the prompt bar) — supports multi-city */
   const handleQuery = async (query: string) => {
@@ -117,7 +160,7 @@ export default function Dashboard({ onBack, user, onLogout }: DashboardProps) {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-bg text-text">
+    <div className={`h-screen flex flex-col bg-bg text-text ${isResizing ? 'select-none cursor-col-resize' : ''}`}>
       {/* Satellite loading overlay */}
       {loading && <SatelliteLoader />}
 
@@ -125,9 +168,16 @@ export default function Dashboard({ onBack, user, onLogout }: DashboardProps) {
       <Header onBack={onBack} user={user} onLogout={onLogout} />
 
       {/* Main content area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Left sidebar — dashboard widgets */}
-        <Sidebar response={response} loading={loading} />
+        <Sidebar response={response} loading={loading} width={sidebarWidth} />
+
+        {/* Resize Handle */}
+        <div
+          onMouseDown={startResizing}
+          className={`absolute top-0 bottom-0 z-30 w-1.5 cursor-col-resize transition-colors hover:bg-primary/40 active:bg-primary ${isResizing ? 'bg-primary' : 'bg-transparent'}`}
+          style={{ left: sidebarWidth - 3 }}
+        />
 
         {/* Center — map + overlays */}
         <main className="flex-1 relative">

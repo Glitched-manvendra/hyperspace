@@ -11,6 +11,7 @@ import {
 interface SidebarProps {
   response: QueryResponse | null;
   loading: boolean;
+  width?: number;
 }
 
 /**
@@ -71,7 +72,7 @@ function WidgetFactory({ card }: { card: UIInstruction }) {
  *
  * Shows placeholder cards when idle, server-driven widgets after a query.
  */
-function Sidebar({ response, loading }: SidebarProps) {
+function Sidebar({ response, loading, width = 320 }: SidebarProps) {
   const placeholderCards: UIInstruction[] = [
     { card_type: "stat", title: "Temperature", value: "--", subtitle: "Awaiting query", color: "gray" },
     { card_type: "stat", title: "Rainfall", value: "--", subtitle: "Awaiting query", color: "gray" },
@@ -82,7 +83,10 @@ function Sidebar({ response, loading }: SidebarProps) {
   const cards = response?.ui_instructions ?? placeholderCards;
 
   return (
-    <aside className="w-80 bg-surface border-r-2 border-border flex flex-col z-20 shadow-neo">
+    <aside
+      className="bg-surface border-r-2 border-border flex flex-col z-20 shadow-neo"
+      style={{ width: `${width}px`, minWidth: `${width}px` }}
+    >
       {/* Section title */}
       <div className="px-4 py-3 border-b-2 border-border">
         <h2 className="text-xs font-display font-bold text-text/70 uppercase tracking-widest">
