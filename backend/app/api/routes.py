@@ -12,9 +12,9 @@ Powered by the Orbital Fusion Engine:
   - Market Brain (mandi price intelligence)
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from app.models.schemas import UserQuery, QueryResponse
+from app.models.schemas import UserQuery, QueryResponse, NDVIResponse
 from app.ai.intent import parse_intent, extract_location, extract_locations
 from app.ai.gemini_service import (
     generate_ai_guidance,
@@ -25,6 +25,7 @@ from app.ai.gemini_service import (
 from app.services.fusion import get_fused_data, build_ui_instructions, generate_guidance
 from app.services.data_fusion import get_location_context
 from app.services.market_trends import get_market_info
+from app.services.ndvi_service import fetch_ndvi_stats, NDVIError
 
 router = APIRouter(prefix="/api", tags=["query"])
 
@@ -203,3 +204,15 @@ async def process_multi_query(payload: UserQuery):
 async def get_context(lat: float, lon: float):
     """Debug endpoint - raw fusion context for a coordinate pair."""
     return await get_location_context(lat, lon)
+
+
+@router.get("/ndvi/{poly_id}", response_model=NDVIResponse, tags=["ndvi"])
+async def get_ndvi(poly_id: str):
+    """Fetch latest NDVI statistics for an AgroMonitoring polygon."""
+    try:
+        result = await fetch_ndvi_stats(poly_id)
+        return NDVIResponse(**result)
+    except NDVIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"NDVI fetch failed: {exc}")

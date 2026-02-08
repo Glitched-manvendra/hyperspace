@@ -92,3 +92,16 @@ class QueryResponse(BaseModel):
     ui_instructions: list[UIInstruction] = Field(
         ..., description="Cards for the frontend to render"
     )
+
+
+class NDVIResponse(BaseModel):
+    """NDVI statistics for a polygon from AgroMonitoring satellite imagery."""
+
+    mean_ndvi: float = Field(..., description="Mean NDVI value [-1.0, 1.0]")
+    min_ndvi: float = Field(default=0.0, description="Minimum NDVI in polygon")
+    max_ndvi: float = Field(default=0.0, description="Maximum NDVI in polygon")
+    median_ndvi: float = Field(default=0.0, description="Median NDVI in polygon")
+    acquisition_date: str = Field(..., description="Image acquisition date (ISO 8601)")
+    satellite_type: str = Field(..., description="Satellite source (Sentinel-2 / Landsat-8)")
+    poly_id: str = Field(..., description="AgroMonitoring polygon ID")
+    cached: bool = Field(default=False, description="Whether result came from cache")
