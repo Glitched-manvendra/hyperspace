@@ -45,16 +45,11 @@ async def shutdown_db_client():
     if db_client:
         db_client.close()
 
-# Allow frontend dev server to connect
+# Allow frontend to connect (any origin for hackathon flexibility)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://orbitalnexus.online",
-        "http://orbitalnexus.online",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

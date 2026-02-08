@@ -235,6 +235,8 @@ interface CropItem {
   confidence: number;
   season: string;
   reasoning?: string;
+  demand_score?: number;
+  demand_trend?: string;
 }
 
 function confidenceColor(c: number): string {
@@ -270,19 +272,31 @@ export function RecommendationList({
             className="flex items-center justify-between bg-bg border-2 border-transparent hover:border-border hover:shadow-neo-sm transition-all rounded-sm px-3 py-2.5"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-text truncate">
-                🌾 {item.name}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-bold text-text truncate">
+                  🌾 {item.name}
+                </p>
+                {item.demand_trend === "rising" && (
+                  <span className="text-[9px] text-emerald-400 font-mono">📈 rising</span>
+                )}
+              </div>
               <p className="text-[10px] text-text/60 mt-0.5 font-mono">
                 {item.season} season
                 {item.reasoning && ` · ${item.reasoning}`}
               </p>
             </div>
-            <span
-              className={`text-[10px] font-bold px-2 py-0.5 border-2 shadow-sm ${confidenceColor(item.confidence)}`}
-            >
-              {Math.round(item.confidence * 100)}%
-            </span>
+            <div className="flex flex-col items-end gap-0.5">
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 border-2 shadow-sm ${confidenceColor(item.confidence)}`}
+              >
+                {Math.round(item.confidence * 100)}%
+              </span>
+              {item.demand_score != null && (
+                <span className="text-[8px] text-text/50 font-mono">
+                  demand: {Math.round(item.demand_score)}
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -401,6 +415,108 @@ export function CropFactorsChart({
             </span>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MARKET CROP BRAIN — Demand & Price Intelligence
+   card_type: "list" with specific market data structure
+   Expected data shape:
+     data: { items: [{name, score, trend, confidence, reasoning}] }
+   Displays top demand crops with market intelligence
+   ═══════════════════════════════════════════════════════════════════ */
+interface MarketBrainItem {
+  name: string;
+  score: number;  // 0-100 demand score
+  trend: "rising" | "falling" | "stable";
+  confidence: string;
+  reasoning?: string;
+}
+
+function trendIcon(trend: string): string {
+  if (trend === "rising") return "📈";
+  if (trend === "falling") return "📉";
+  return "➡️";
+}
+
+function trendColor(trend: string): string {
+  if (trend === "rising") return "text-emerald-400";
+  if (trend === "falling") return "text-rose-400";
+  return "text-amber-400";
+}
+
+export function MarketCropBrain({
+  title,
+  subtitle,
+  data,
+}: RecommendationListProps) {
+  const items: MarketBrainItem[] = data?.items ?? [];
+
+  if (items.length === 0) {
+    return (
+      <div className="neo-box p-4 bg-surface">
+        <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
+          {title}
+        </p>
+        {subtitle && (
+          <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
+        )}
+        <p className="text-xs text-text/50 italic">No market data available</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="neo-box p-4 bg-surface">
+      <p className="text-[11px] text-text/60 uppercase tracking-widest font-bold mb-0.5">
+        {title}
+      </p>
+      {subtitle && (
+        <p className="text-[10px] text-text/70 mb-3 font-mono">{subtitle}</p>
+      )}
+
+      <div className="space-y-2">
+        {items.map((item, idx) => (
+          <div
+            key={`${item.name}-${idx}`}
+            className="flex items-start justify-between bg-bg border-2 border-transparent hover:border-border hover:shadow-neo-sm transition-all rounded-sm px-3 py-2.5"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm ${trendColor(item.trend)}`}>
+                  {trendIcon(item.trend)}
+                </span>
+                <p className="text-sm font-bold text-text truncate">
+                  {item.name}
+                </p>
+              </div>
+              {item.reasoning && (
+                <p className="text-[10px] text-text/60 mt-1 font-mono">
+                  {item.reasoning}
+                </p>
+              )}
+              <p className="text-[9px] text-text/50 mt-0.5 font-mono uppercase">
+                Confidence: {item.confidence}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1 ml-3">
+              <span
+                className={`px-2 py-0.5 text-[10px] font-bold border-2 rounded-sm ${
+                  item.score >= 70
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-800"
+                    : item.score >= 50
+                    ? "bg-amber-100 text-amber-800 border-amber-800"
+                    : "bg-rose-100 text-rose-800 border-rose-800"
+                }`}
+              >
+                {Math.round(item.score)}
+              </span>
+              <span className="text-[9px] text-text/50 font-mono">demand</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

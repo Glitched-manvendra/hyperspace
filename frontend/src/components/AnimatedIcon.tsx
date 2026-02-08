@@ -11,7 +11,7 @@ interface AnimatedIconProps {
  * AnimatedIcon - Renders professional animated icons based on the metric type.
  * Uses Framer Motion for subtle, non-distracting animations.
  */
-export default function AnimatedIcon({ type, className = "", color = "currentColor" }: AnimatedIconProps) {
+export default function AnimatedIcon({ type, className = "", color: _color = "currentColor" }: AnimatedIconProps) {
     const normalizedType = type.toLowerCase();
 
     // Common icon props

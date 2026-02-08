@@ -6,6 +6,7 @@ import {
   SoilCompositionChart,
   RecommendationList,
   CropFactorsChart,
+  MarketCropBrain,
 } from "./GenerativeWidgets";
 
 interface SidebarProps {
@@ -21,6 +22,17 @@ interface SidebarProps {
  * Supports: chart_line, chart_pie, list, and stat (default).
  */
 function WidgetFactory({ card }: { card: UIInstruction }) {
+  // Market Crop Brain detection (list card with special title)
+  if (card.card_type === "list" && card.title.includes("Market Crop Brain")) {
+    return (
+      <MarketCropBrain
+        title={card.title}
+        subtitle={card.subtitle}
+        data={card.data}
+      />
+    );
+  }
+
   switch (card.card_type) {
     case "chart_line":
       return (

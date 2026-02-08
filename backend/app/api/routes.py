@@ -14,7 +14,7 @@ Powered by the Orbital Fusion Engine:
 
 from fastapi import APIRouter, HTTPException
 
-from app.models.schemas import UserQuery, QueryResponse, NDVIResponse
+from app.models.schemas import UserQuery, QueryResponse, NDVIResponse, CropRecommendation
 from app.ai.intent import parse_intent, extract_location, extract_locations
 from app.ai.gemini_service import (
     generate_ai_guidance,
@@ -111,13 +111,23 @@ async def process_query(payload: UserQuery) -> QueryResponse:
     )
     ai_powered = ai_text is not None
 
+    crop_prediction = crop_prediction or []
+
     return QueryResponse(
         intent=intent,
         query_echo=payload.query,
         fused_data=fused_data,
         guidance_text=guidance_text,
         ai_powered=ai_powered,
-        recommendations=[],
+        recommendations=[
+            CropRecommendation(
+                crop_name=c.get("crop", "unknown"),
+                confidence=c.get("confidence", 0.7),
+                reasoning=c.get("reasoning", "AI-recommended crop"),
+                season=c.get("season", "Current"),
+            )
+            for c in crop_prediction
+        ],
         ui_instructions=ui_instructions,
     )
 
@@ -186,7 +196,15 @@ async def process_multi_query(payload: UserQuery):
             fused_data=fused_data,
             guidance_text=guidance_text,
             ai_powered=False,
-            recommendations=[],
+            recommendations=[
+                CropRecommendation(
+                    crop_name=c.get("crop", "unknown"),
+                    confidence=c.get("confidence", 0.7),
+                    reasoning=c.get("reasoning", "AI-recommended crop"),
+                    season=c.get("season", "Current"),
+                )
+                for c in crop_prediction
+            ],
             ui_instructions=ui_instructions,
         )
 

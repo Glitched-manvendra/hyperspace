@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "/api/auth";
+const API_BASE = import.meta.env.DEV ? "/api/auth" : "https://hyperspace-0w29.onrender.com/api/auth";
 const TOKEN_KEY = "orbital_nexus_token";
 const USER_KEY = "orbital_nexus_user";
 
