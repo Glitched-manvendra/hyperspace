@@ -54,6 +54,7 @@ app.add_middleware(
         "https://orbitalnexus.online",
         "http://orbitalnexus.online",
         "https://orbital-nexus.vercel.app",
+        "https://hyperspace-six.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
