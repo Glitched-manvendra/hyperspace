@@ -626,7 +626,7 @@ function Footer({ onToggle }: FooterProps) {
           <h4 className="font-display font-bold text-white">Connect</h4>
           <div className="flex gap-4">
             {[
-              { icon: Twitter, href: "#" },
+              { icon: Twitter, href: "https://x.com/Orbital_Nexus" },
               { icon: Github, href: "#" },
               { icon: Linkedin, href: "#" },
               { icon: Mail, href: "mailto:hello@orbitalnexus.online" },
@@ -634,6 +634,8 @@ function Footer({ onToggle }: FooterProps) {
               <a
                 key={i}
                 href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/5 border border-white/10 grid place-items-center text-white/90 hover:text-white hover:bg-primary/20 hover:border-primary/50 transition-all duration-300"
               >
                 <s.icon className="w-5 h-5" />
