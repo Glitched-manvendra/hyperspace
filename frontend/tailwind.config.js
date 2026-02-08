@@ -38,6 +38,15 @@ export default {
       backgroundImage: {
         "space-gradient": "radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-primary) 100%)",
       },
+      keyframes: {
+        shimmer: {
+          "0%": { transform: "translateX(-100%) skewX(-15deg)" },
+          "100%": { transform: "translateX(250%) skewX(-15deg)" },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 1.5s infinite",
+      },
     },
   },
   plugins: [],

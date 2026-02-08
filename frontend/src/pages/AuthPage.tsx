@@ -17,6 +17,8 @@ import { signup, login } from "../utils/auth";
 
 interface AuthPageProps {
   onAuth: (user: { phone: string; name: string; village: string }) => void;
+  initialMode?: "login" | "signup";
+  onBack?: () => void;
 }
 
 /* ─── animation presets ─── */
@@ -35,8 +37,8 @@ const stagger = {
  * Self-contained auth for farmers. No external dependencies.
  * Stores sessions via JWT tokens in localStorage.
  */
-export default function AuthPage({ onAuth }: AuthPageProps) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+export default function AuthPage({ onAuth, initialMode = "login", onBack }: AuthPageProps) {
+  const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -98,16 +100,20 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         className="relative z-10 w-full max-w-md px-4"
       >
         {/* ── Logo + branding ── */}
-        <motion.div variants={fadeUp} className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
+        <motion.div
+          variants={fadeUp}
+          className="text-center mb-4 cursor-pointer"
+          onClick={onBack}
+        >
+          <div className="inline-flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-primary/20">
               <img src="/logo.png" alt="Orbital Nexus" className="w-full h-full object-cover" />
             </div>
             <div className="text-left">
-              <h1 className="text-xl font-display font-bold text-white tracking-tight">
+              <h1 className="text-xl font-display font-bold text-text tracking-tight">
                 Orbital Nexus
               </h1>
-              <p className="text-[10px] text-sage uppercase tracking-[0.2em]">
+              <p className="text-[10px] text-text/70 font-bold uppercase tracking-[0.2em]">
                 Satellite-Powered Farming
               </p>
             </div>
@@ -117,27 +123,25 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         {/* ── Auth card ── */}
         <motion.div
           variants={fadeUp}
-          className="neo-box p-8"
+          className="neo-box p-6"
         >
           {/* Mode tabs */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4">
             <button
               onClick={() => { setMode("login"); setError(null); }}
-              className={`flex-1 py-2.5 font-bold border-2 border-border transition-all ${
-                mode === "login"
-                  ? "bg-primary text-black shadow-neo-sm"
-                  : "bg-surface text-text hover:bg-bg"
-              }`}
+              className={`flex-1 py-2.5 font-bold border-2 border-border transition-all ${mode === "login"
+                ? "bg-primary text-black shadow-neo-sm"
+                : "bg-surface text-text hover:bg-bg"
+                }`}
             >
               Sign In
             </button>
             <button
               onClick={() => { setMode("signup"); setError(null); }}
-              className={`flex-1 py-2.5 font-bold border-2 border-border transition-all ${
-                mode === "signup"
-                  ? "bg-primary text-black shadow-neo-sm"
-                  : "bg-surface text-text hover:bg-bg"
-              }`}
+              className={`flex-1 py-2.5 font-bold border-2 border-border transition-all ${mode === "signup"
+                ? "bg-primary text-black shadow-neo-sm"
+                : "bg-surface text-text hover:bg-bg"
+                }`}
             >
               Register
             </button>
@@ -175,7 +179,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Name (signup only) */}
             <AnimatePresence>
               {mode === "signup" && (
@@ -297,7 +301,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         {/* ── Bottom features row ── */}
         <motion.div
           variants={fadeUp}
-          className="flex items-center justify-center gap-6 mt-6 text-[10px] text-sage/60"
+          className="flex items-center justify-center gap-6 mt-4 text-[10px] text-sage/60"
         >
           <span className="flex items-center gap-1.5">
             <Satellite className="w-3 h-3" />

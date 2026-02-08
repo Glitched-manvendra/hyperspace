@@ -21,6 +21,7 @@ import {
   Linkedin,
   Mail,
 } from "lucide-react";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 /* ─── animation presets ─── */
 const fadeUp = {
@@ -38,7 +39,7 @@ const stagger = {
 
 /* ─── types ─── */
 interface LandingPageProps {
-  onLaunch: () => void;
+  onLaunch: (mode?: "login" | "signup") => void;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -54,12 +55,11 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
   return (
     <div className="h-screen overflow-y-auto custom-scrollbar bg-bg text-text relative">
       {/* ── Global ambient blobs ── */}
-      {/* ── Global ambient blobs (Hidden for Neo-Brutalism) ── */}
-      {/* <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-primary/15 rounded-full blur-[160px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[700px] h-[700px] bg-accent/15 rounded-full blur-[180px]" />
         <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[120px]" />
-      </div> */}
+      </div>
 
       {/* ── NAV ── */}
       <Nav onLaunch={onLaunch} />
@@ -91,32 +91,51 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
 /* ═══════════════════════════════════════════════════════════════════
    NAV — Glass navbar
    ═══════════════════════════════════════════════════════════════════ */
-function Nav({ onLaunch }: { onLaunch: () => void }) {
+function Nav({ onLaunch }: { onLaunch: (mode?: "login" | "signup") => void }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-surface border-b-2 border-border shadow-neo-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg overflow-hidden">
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="group flex items-center gap-3 transition-colors cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-lg overflow-hidden border-2 border-border shadow-neo-sm group-hover:border-primary transition-colors">
             <img src="/logo.png" alt="Orbital Nexus" className="w-full h-full object-cover" />
           </div>
-          <span className="text-base font-display font-bold tracking-tight">
+          <span className="text-base font-display font-bold tracking-tight group-hover:text-primary transition-colors">
             Orbital Nexus
           </span>
-        </div>
+        </a>
 
-        <div className="hidden sm:flex items-center gap-8 text-sm text-sage">
-          <a href="#problem" className="hover:text-primary transition font-medium">Problem</a>
-          <a href="#solution" className="hover:text-primary transition font-medium">Solution</a>
-          <a href="#data" className="hover:text-primary transition font-medium">Data</a>
-          <a href="#trust" className="hover:text-primary transition font-medium">Trust</a>
-        </div>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <div className="hidden sm:flex items-center gap-6 text-sm text-text font-bold">
+            <a href="#problem" className="neo-box px-4 py-1.5 hover:text-primary transition font-medium">Problem</a>
+            <a href="#solution" className="neo-box px-4 py-1.5 hover:text-primary transition font-medium">Solution</a>
+            <a href="#data" className="neo-box px-4 py-1.5 hover:text-primary transition font-medium">Data</a>
+            <a href="#trust" className="neo-box px-4 py-1.5 hover:text-primary transition font-medium">Trust</a>
 
-        <button
-          onClick={onLaunch}
-          className="neo-button px-5 py-2 rounded-none text-sm font-bold bg-primary text-black hover:bg-primary/90"
-        >
-          Launch Dashboard
-        </button>
+            <div className="w-px h-6 bg-border mx-2" />
+
+            <button
+              onClick={() => onLaunch("signup")}
+              className="neo-button px-5 py-2 rounded-none text-sm font-bold bg-primary text-black hover:bg-primary/90"
+            >
+              Launch Dashboard
+            </button>
+          </div>
+
+          <button
+            onClick={() => onLaunch("signup")}
+            className="neo-button px-4 py-2 rounded-none text-xs font-bold bg-primary text-black hover:bg-primary/90 block sm:hidden"
+          >
+            Launch
+          </button>
+        </div>
       </div>
     </nav>
   );
@@ -125,16 +144,16 @@ function Nav({ onLaunch }: { onLaunch: () => void }) {
 /* ═══════════════════════════════════════════════════════════════════
    HERO — Glass hero with orbit decoration
    ═══════════════════════════════════════════════════════════════════ */
-function HeroSection({ onLaunch }: { onLaunch: () => void }) {
+function HeroSection({ onLaunch }: { onLaunch: (mode?: "login" | "signup") => void }) {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 overflow-hidden">
       {/* Grid overlay */}
       <div className="pointer-events-none absolute inset-0">
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.05] dark:opacity-[0.03]"
           style={{
             backgroundImage:
-              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+              "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
             backgroundSize: "72px 72px",
           }}
         />
@@ -148,16 +167,6 @@ function HeroSection({ onLaunch }: { onLaunch: () => void }) {
         variants={stagger}
         className="relative z-10 max-w-4xl text-center flex flex-col items-center gap-6"
       >
-        <motion.div
-          variants={fadeUp}
-          custom={0}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-surface border-2 border-border shadow-neo-sm"
-        >
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs text-text uppercase tracking-wider font-bold">
-            Hyperspace Innovation Hackathon 2026 — PS #4
-          </span>
-        </motion.div>
 
         <motion.h1
           variants={fadeUp}
@@ -187,10 +196,11 @@ function HeroSection({ onLaunch }: { onLaunch: () => void }) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onLaunch}
-            className="group relative px-8 py-4 bg-white text-black font-bold rounded-full text-lg shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.35)] transition-shadow"
+            onClick={() => onLaunch("signup")}
+            className="group relative px-8 py-4 bg-[#88cc00] text-black font-bold rounded-full text-lg shadow-[0_0_40px_rgba(136,204,0,0.3)] hover:shadow-[0_0_60px_rgba(136,204,0,0.5)] transition-all overflow-hidden"
           >
-            <span className="flex items-center gap-2">
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-amber-300/60 to-transparent -translate-x-full group-hover:animate-shimmer" />
+            <span className="flex items-center gap-2 relative z-10">
               <Rocket className="w-5 h-5" />
               Analyze My Land
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -272,8 +282,28 @@ function ProblemSection() {
           <motion.span variants={fadeUp} custom={0} className="text-xs font-semibold uppercase tracking-widest text-red-400">
             The Problem
           </motion.span>
-          <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-4xl font-display font-bold mt-3">
-            Why Indian Farmers Keep Losing
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, amount: 0.3 }}
+            className="text-3xl sm:text-4xl font-bold mt-3 text-text min-h-[1.2em]"
+            style={{ fontFamily: "'Shadows Into Light', cursive" }}
+          >
+            {"Why Indian Farmers Keep Losing".split("").map((char, index) => (
+              <motion.span
+                key={`${char}-${index}`}
+                variants={{
+                  hidden: { opacity: 0, y: 5 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { delay: index * 0.04, duration: 0.1 }
+                  },
+                }}
+              >
+                {char}
+              </motion.span>
+            ))}
           </motion.h2>
           <motion.p variants={fadeUp} custom={2} className="text-sage mt-3 max-w-lg mx-auto">
             Every year, ₹90,000 crore is lost to market mispricing, data fragmentation, and avoidable soil damage.
@@ -514,7 +544,7 @@ function TrustSection() {
 /* ═══════════════════════════════════════════════════════════════════
    CTA BAND — Glass CTA
    ═══════════════════════════════════════════════════════════════════ */
-function CtaBand({ onLaunch }: { onLaunch: () => void }) {
+function CtaBand({ onLaunch }: { onLaunch: (mode?: "login" | "signup") => void }) {
   return (
     <section className="py-20 px-6">
       <motion.div
@@ -537,7 +567,7 @@ function CtaBand({ onLaunch }: { onLaunch: () => void }) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onLaunch}
+            onClick={() => onLaunch("signup")}
             className="group inline-flex items-center gap-2 px-8 py-4 bg-text text-bg font-bold rounded-none shadow-neo hover:shadow-neo-lg transition-all"
           >
             <Rocket className="w-4 h-4" />
@@ -643,7 +673,7 @@ function Footer({ onToggle }: FooterProps) {
    ═══════════════════════════════════════════════════════════════════ */
 function OrbitDecoration() {
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]">
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.2] dark:opacity-[0.15] text-border/30">
       <svg
         width="800"
         height="800"
@@ -651,9 +681,9 @@ function OrbitDecoration() {
         fill="none"
         className="animate-[spin_100s_linear_infinite]"
       >
-        <circle cx="400" cy="400" r="200" stroke="white" strokeWidth="0.5" />
-        <circle cx="400" cy="400" r="290" stroke="white" strokeWidth="0.5" />
-        <circle cx="400" cy="400" r="380" stroke="white" strokeWidth="0.5" />
+        <circle cx="400" cy="400" r="200" stroke="currentColor" strokeWidth="0.5" />
+        <circle cx="400" cy="400" r="290" stroke="currentColor" strokeWidth="0.5" />
+        <circle cx="400" cy="400" r="380" stroke="currentColor" strokeWidth="0.5" />
         <circle cx="600" cy="400" r="5" fill="#10b981" />
         <circle cx="400" cy="110" r="4" fill="#06b6d4" />
         <circle cx="200" cy="560" r="4" fill="#60a5fa" />

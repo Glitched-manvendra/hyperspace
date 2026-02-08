@@ -18,6 +18,7 @@ type View = "landing" | "auth" | "dashboard";
 function App() {
   const [view, setView] = useState<View>("landing");
   const [user, setUser] = useState<User | null>(null);
+  const [initialAuthMode, setInitialAuthMode] = useState<"login" | "signup">("login");
 
   // Restore session on mount
   useEffect(() => {
@@ -36,18 +37,22 @@ function App() {
     setView("landing");
   };
 
-  const handleLaunch = () => {
-    if (user) {
-      setView("dashboard");
-    } else {
-      setView("auth");
-    }
+  const handleLaunch = (mode?: any) => {
+    const targetMode = (mode === "signup" || mode === "login") ? mode : "signup";
+    setInitialAuthMode(targetMode);
+    setView("auth");
   };
 
   return (
     <ThemeProvider>
       {view === "landing" && <LandingPage onLaunch={handleLaunch} />}
-      {view === "auth" && <AuthPage onAuth={handleAuth} />}
+      {view === "auth" && (
+        <AuthPage
+          onAuth={handleAuth}
+          initialMode={initialAuthMode}
+          onBack={() => setView("landing")}
+        />
+      )}
       {view === "dashboard" && (
         <Dashboard
           onBack={() => setView("landing")}

@@ -1,4 +1,4 @@
-import { ArrowLeft, Satellite, LogOut, User } from "lucide-react";
+import { Satellite, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -14,18 +14,13 @@ function Header({ onBack, user, onLogout }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 py-3 bg-surface border-b-2 border-border">
       {/* Logo + title */}
-      <div className="flex items-center gap-3">
+      <button
+        onClick={onBack}
+        className="group flex items-center gap-3 hover:opacity-80 transition-all text-left"
+        title="Go to Home"
+      >
         <ThemeToggle />
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="text-text hover:bg-bg p-1 rounded-sm border-2 border-transparent hover:border-border transition-all mr-2"
-            title="Back to Landing"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-        )}
-        <div className="w-10 h-10 border-2 border-border shadow-neo-sm overflow-hidden bg-white">
+        <div className="w-10 h-10 border-2 border-border shadow-neo-sm overflow-hidden bg-white group-hover:border-primary transition-colors">
           <img
             src="/logo.png"
             alt="Orbital Nexus"
@@ -33,14 +28,14 @@ function Header({ onBack, user, onLogout }: HeaderProps) {
           />
         </div>
         <div>
-          <h1 className="text-lg font-display font-bold text-text tracking-tight leading-none">
+          <h1 className="text-lg font-display font-bold text-text tracking-tight leading-none group-hover:text-primary transition-colors">
             Orbital Nexus
           </h1>
           <p className="text-[10px] text-text/70 uppercase tracking-widest font-mono">
             Multi-Satellite Data Fusion Dashboard
           </p>
         </div>
-      </div>
+      </button>
 
       {/* Right side: user + status */}
       <div className="flex items-center gap-3">
